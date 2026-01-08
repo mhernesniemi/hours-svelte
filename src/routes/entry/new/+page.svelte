@@ -11,6 +11,21 @@
 	import { ArrowLeft, Save, Loader2, AlertCircle, Search } from '@lucide/svelte';
 	import { format, set, startOfDay } from 'date-fns';
 
+	// Auth state
+	let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
+	let authChecked = $state(false);
+
+	// Check authentication on mount
+	$effect(() => {
+		getCurrentUser({}).then((u) => {
+			user = u;
+			authChecked = true;
+			if (!u) {
+				goto('/login');
+			}
+		});
+	});
+
 	// Form state
 	let date = $state(format(new Date(), 'yyyy-MM-dd'));
 	let startTime = $state(format(new Date(), 'HH:mm'));
@@ -31,7 +46,6 @@
 	// Load data
 	const phasesPromise = getPhasesWithHierarchy({});
 	const worktypesPromise = getWorktypes({});
-	const userPromise = getCurrentUser({});
 
 	// Filter phases by search
 	function getFilteredPhases(phases: Awaited<typeof phasesPromise>, search: string) {
@@ -100,16 +114,11 @@
 	<title>New Entry - Inside</title>
 </svelte:head>
 
-{#await userPromise}
+{#if !authChecked}
 	<div class="flex min-h-[50vh] items-center justify-center">
 		<div class="text-muted-foreground">Loading...</div>
 	</div>
-{:then user}
-	{#if !user}
-		<script>
-			goto('/login');
-		</script>
-	{:else}
+{:else if user}
 		<div class="mx-auto max-w-2xl p-4">
 			<div class="mb-6">
 				<Button variant="ghost" onclick={() => goto('/')}>
@@ -285,5 +294,4 @@
 				</CardContent>
 			</Card>
 		</div>
-	{/if}
-{/await}
+{/if}

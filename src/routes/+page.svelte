@@ -15,6 +15,21 @@
 	} from '@lucide/svelte';
 	import { format, addMonths, subMonths, startOfMonth, parseISO } from 'date-fns';
 
+	// Auth state
+	let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
+	let authChecked = $state(false);
+
+	// Check authentication on mount
+	$effect(() => {
+		getCurrentUser({}).then((u) => {
+			user = u;
+			authChecked = true;
+			if (!u) {
+				goto('/login');
+			}
+		});
+	});
+
 	// Current month state
 	let currentDate = $state(startOfMonth(new Date()));
 
@@ -81,25 +96,17 @@
 	function formatDate(dateStr: string): string {
 		return format(parseISO(dateStr), 'EEEE, MMM d');
 	}
-
-	// Check authentication
-	const userPromise = getCurrentUser({});
 </script>
 
 <svelte:head>
 	<title>Hours - Inside</title>
 </svelte:head>
 
-{#await userPromise}
+{#if !authChecked}
 	<div class="flex min-h-[50vh] items-center justify-center">
 		<div class="text-muted-foreground">Loading...</div>
 	</div>
-{:then user}
-	{#if !user}
-		<script>
-			goto('/login');
-		</script>
-	{:else}
+{:else if user}
 		<div class="mx-auto max-w-5xl p-4">
 			<!-- Month Navigation -->
 			<div class="mb-6 flex items-center justify-between">
@@ -273,5 +280,4 @@
 				</Card>
 			{/await}
 		</div>
-	{/if}
-{/await}
+{/if}

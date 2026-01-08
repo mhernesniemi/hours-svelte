@@ -36,10 +36,24 @@
 	let error = $state('');
 	let isLoaded = $state(false);
 
+	// Auth state
+	let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
+	let authChecked = $state(false);
+
+	// Check authentication on mount
+	$effect(() => {
+		getCurrentUser({}).then((u) => {
+			user = u;
+			authChecked = true;
+			if (!u) {
+				goto('/login');
+			}
+		});
+	});
+
 	// Load data
 	const phasesPromise = getPhasesWithHierarchy({});
 	const worktypesPromise = getWorktypes({});
-	const userPromise = getCurrentUser({});
 
 	// Load the entry data once phases are loaded
 	$effect(() => {
@@ -149,16 +163,11 @@
 	<title>Edit Entry - Inside</title>
 </svelte:head>
 
-{#await userPromise}
+{#if !authChecked}
 	<div class="flex min-h-[50vh] items-center justify-center">
 		<div class="text-muted-foreground">Loading...</div>
 	</div>
-{:then user}
-	{#if !user}
-		<script>
-			goto('/login');
-		</script>
-	{:else}
+{:else if user}
 		<div class="mx-auto max-w-2xl p-4">
 			<div class="mb-6">
 				<Button variant="ghost" onclick={() => goto('/')}>
@@ -349,5 +358,4 @@
 				</CardContent>
 			</Card>
 		</div>
-	{/if}
-{/await}
+{/if}

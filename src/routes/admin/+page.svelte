@@ -28,12 +28,26 @@
 	} from '@lucide/svelte';
 	import { format } from 'date-fns';
 
+	// Auth state
+	let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
+	let authChecked = $state(false);
+
+	// Check authentication on mount
+	$effect(() => {
+		getCurrentUser({}).then((u) => {
+			user = u;
+			authChecked = true;
+			if (!u) {
+				goto('/login');
+			}
+		});
+	});
+
 	// UI state
 	let isSyncing = $state<string | null>(null);
 	let syncResult = $state<{ type: string; success: boolean; message: string } | null>(null);
 
 	// Load data
-	const userPromise = getCurrentUser({});
 	let usersPromise = $state(getUsers({}));
 	let syncLogsPromise = $state(getSyncLogs({}));
 
@@ -101,25 +115,22 @@
 	<title>Admin - Inside</title>
 </svelte:head>
 
-{#await userPromise}
+{#if !authChecked}
 	<div class="flex min-h-[50vh] items-center justify-center">
 		<div class="text-muted-foreground">Loading...</div>
 	</div>
-{:then user}
-	{#if !user}
-		{goto('/login')}
-	{:else if user.role !== 'admin'}
-		<div class="flex min-h-[50vh] items-center justify-center">
-			<Card class="max-w-md">
-				<CardContent class="flex flex-col items-center py-8">
-					<AlertCircle class="text-destructive mb-4 h-12 w-12" />
-					<p class="text-lg font-medium">Access Denied</p>
-					<p class="text-muted-foreground mt-2 text-sm">You need admin privileges to access this page.</p>
-					<Button class="mt-4" onclick={() => goto('/')}>Go to Hours</Button>
-				</CardContent>
-			</Card>
-		</div>
-	{:else}
+{:else if user && user.role !== 'admin'}
+	<div class="flex min-h-[50vh] items-center justify-center">
+		<Card class="max-w-md">
+			<CardContent class="flex flex-col items-center py-8">
+				<AlertCircle class="text-destructive mb-4 h-12 w-12" />
+				<p class="text-lg font-medium">Access Denied</p>
+				<p class="text-muted-foreground mt-2 text-sm">You need admin privileges to access this page.</p>
+				<Button class="mt-4" onclick={() => goto('/')}>Go to Hours</Button>
+			</CardContent>
+		</Card>
+	</div>
+{:else if user}
 		<div class="mx-auto max-w-5xl p-4">
 			<h1 class="mb-6 text-2xl font-bold">Admin</h1>
 
@@ -344,5 +355,4 @@
 				</CardContent>
 			</Card>
 		</div>
-	{/if}
-{/await}
+{/if}
