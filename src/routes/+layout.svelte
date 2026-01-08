@@ -2,7 +2,7 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { getCurrentUser, logout } from '$lib/remote';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import { Clock, Settings, LogOut, User } from '@lucide/svelte';
@@ -14,7 +14,6 @@
 
 	async function handleLogout() {
 		await logout({});
-		await invalidateAll();
 		goto('/login');
 	}
 
