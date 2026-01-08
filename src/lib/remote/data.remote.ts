@@ -1,9 +1,9 @@
-import { query, getRequestEvent } from '$app/server';
-import * as v from 'valibot';
-import { validateSession, requireAuth } from '$lib/server/auth/session';
-import { db } from '$lib/server/db';
-import { customers, cases, phases, worktypes } from '$lib/server/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { query, getRequestEvent } from "$app/server";
+import * as v from "valibot";
+import { validateSession, requireAuth } from "$lib/server/auth/session";
+import { db } from "$lib/server/db";
+import { customers, cases, phases, worktypes } from "$lib/server/db/schema";
+import { eq, and, asc } from "drizzle-orm";
 
 // Empty schema for functions that don't need input validation
 const EmptySchema = v.object({});

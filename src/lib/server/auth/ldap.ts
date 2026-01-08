@@ -1,5 +1,5 @@
-import { Client, type SearchResult } from 'ldapts';
-import { env } from '$env/dynamic/private';
+import { Client, type SearchResult } from "ldapts";
+import { env } from "$env/dynamic/private";
 
 export interface LdapUser {
 	email: string;
@@ -22,7 +22,7 @@ export async function authenticateLdap(
 	const ldapBaseDn = env.LDAP_BASE_DN;
 
 	if (!ldapUrl || !ldapBindDn || !ldapBindPassword || !ldapBaseDn) {
-		console.error('LDAP configuration missing');
+		console.error("LDAP configuration missing");
 		return null;
 	}
 
@@ -38,13 +38,15 @@ export async function authenticateLdap(
 
 		// 2. Find user by sAMAccountName (Windows AD) or uid
 		const { searchEntries }: SearchResult = await client.search(ldapBaseDn, {
-			scope: 'sub',
+			scope: "sub",
 			filter: `(|(sAMAccountName=${escapeFilter(username)})(uid=${escapeFilter(username)}))`,
-			attributes: ['dn', 'mail', 'givenName', 'sn', 'displayName']
+			attributes: ["dn", "mail", "givenName", "sn", "displayName"]
 		});
 
 		if (searchEntries.length !== 1) {
-			console.log(`LDAP: User ${username} not found or ambiguous (${searchEntries.length} results)`);
+			console.log(
+				`LDAP: User ${username} not found or ambiguous (${searchEntries.length} results)`
+			);
 			return null;
 		}
 
@@ -69,19 +71,19 @@ export async function authenticateLdap(
 		}
 
 		// 4. Extract user data
-		const email = extractAttribute(userEntry, 'mail');
-		const givenName = extractAttribute(userEntry, 'givenName');
-		const sn = extractAttribute(userEntry, 'sn');
-		const displayName = extractAttribute(userEntry, 'displayName');
+		const email = extractAttribute(userEntry, "mail");
+		const givenName = extractAttribute(userEntry, "givenName");
+		const sn = extractAttribute(userEntry, "sn");
+		const displayName = extractAttribute(userEntry, "displayName");
 
 		// Parse name from displayName if givenName/sn not available
 		let firstName = givenName;
 		let lastName = sn;
 
 		if (!firstName && !lastName && displayName) {
-			const parts = displayName.split(' ');
-			firstName = parts[0] || '';
-			lastName = parts.slice(1).join(' ') || '';
+			const parts = displayName.split(" ");
+			firstName = parts[0] || "";
+			lastName = parts.slice(1).join(" ") || "";
 		}
 
 		if (!email) {
@@ -91,12 +93,12 @@ export async function authenticateLdap(
 
 		return {
 			email: email.toLowerCase(),
-			firstName: firstName || '',
-			lastName: lastName || '',
+			firstName: firstName || "",
+			lastName: lastName || "",
 			ldapDn: userDn
 		};
 	} catch (error) {
-		console.error('LDAP authentication error:', error);
+		console.error("LDAP authentication error:", error);
 		return null;
 	} finally {
 		try {
@@ -112,11 +114,11 @@ export async function authenticateLdap(
  */
 function escapeFilter(value: string): string {
 	return value
-		.replace(/\\/g, '\\5c')
-		.replace(/\*/g, '\\2a')
-		.replace(/\(/g, '\\28')
-		.replace(/\)/g, '\\29')
-		.replace(/\x00/g, '\\00');
+		.replace(/\\/g, "\\5c")
+		.replace(/\*/g, "\\2a")
+		.replace(/\(/g, "\\28")
+		.replace(/\)/g, "\\29")
+		.replace(/\x00/g, "\\00");
 }
 
 /**

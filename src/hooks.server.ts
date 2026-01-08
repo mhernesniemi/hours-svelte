@@ -1,5 +1,5 @@
-import type { Handle } from '@sveltejs/kit';
-import { validateSession } from '$lib/server/auth/session';
+import type { Handle } from "@sveltejs/kit";
+import { validateSession } from "$lib/server/auth/session";
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Validate session and attach user to locals

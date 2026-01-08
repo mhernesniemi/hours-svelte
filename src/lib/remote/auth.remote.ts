@@ -1,9 +1,14 @@
-import { query, command, getRequestEvent } from '$app/server';
-import * as v from 'valibot';
-import { authenticateLdap } from '$lib/server/auth/ldap';
-import { createSession, invalidateSession, validateSession, type SessionUser } from '$lib/server/auth/session';
-import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
+import { query, command, getRequestEvent } from "$app/server";
+import * as v from "valibot";
+import { authenticateLdap } from "$lib/server/auth/ldap";
+import {
+	createSession,
+	invalidateSession,
+	validateSession,
+	type SessionUser
+} from "$lib/server/auth/session";
+import { db } from "$lib/server/db";
+import { users } from "$lib/server/db/schema";
 
 // Empty schema for functions that don't need input validation
 const EmptySchema = v.object({});
@@ -21,7 +26,7 @@ export const loginWithLdap = command(
 		// Authenticate against LDAP
 		const ldapUser = await authenticateLdap(username, password);
 		if (!ldapUser) {
-			throw new Error('Invalid credentials');
+			throw new Error("Invalid credentials");
 		}
 
 		// Upsert user in database

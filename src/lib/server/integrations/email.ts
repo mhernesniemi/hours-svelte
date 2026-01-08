@@ -1,8 +1,8 @@
-import { Resend } from 'resend';
-import { env } from '$env/dynamic/private';
-import { db } from '$lib/server/db';
-import { notificationLogs } from '$lib/server/db/schema';
-import { format } from 'date-fns';
+import { Resend } from "resend";
+import { env } from "$env/dynamic/private";
+import { db } from "$lib/server/db";
+import { notificationLogs } from "$lib/server/db/schema";
+import { format } from "date-fns";
 
 // Initialize Resend client
 function getResendClient(): Resend | null {
@@ -14,10 +14,10 @@ function getResendClient(): Resend | null {
 // Email configuration
 function getEmailConfig() {
 	return {
-		fromEmail: env.EMAIL_FROM || 'Inside <noreply@inside.example.com>',
+		fromEmail: env.EMAIL_FROM || "Inside <noreply@inside.example.com>",
 		pmEmail: env.PM_EMAIL || null,
 		alertEmail: env.ALERT_EMAIL || null,
-		serverName: env.SERVER_NAME || 'Inside'
+		serverName: env.SERVER_NAME || "Inside"
 	};
 }
 
@@ -47,19 +47,19 @@ export async function sendMissingHoursNotification(data: MissingHoursData): Prom
 	const config = getEmailConfig();
 
 	if (!resend) {
-		console.log('Email sending disabled - no Resend API key configured');
+		console.log("Email sending disabled - no Resend API key configured");
 		return false;
 	}
 
 	const subject = `[${config.serverName}] Missing or unconfirmed hours`;
 
 	const missingDaysList = data.daysWithMissingHours
-		.map((d) => format(d, 'EEEE, MMMM d, yyyy'))
-		.join('\n  - ');
+		.map((d) => format(d, "EEEE, MMMM d, yyyy"))
+		.join("\n  - ");
 
 	const unconfirmedDaysList = data.daysWithUnconfirmedHours
-		.map((d) => format(d, 'EEEE, MMMM d, yyyy'))
-		.join('\n  - ');
+		.map((d) => format(d, "EEEE, MMMM d, yyyy"))
+		.join("\n  - ");
 
 	let body = `Hi ${data.firstName},\n\n`;
 	body += `This is a reminder about your time tracking in ${config.serverName}.\n\n`;
@@ -86,24 +86,24 @@ export async function sendMissingHoursNotification(data: MissingHoursData): Prom
 		// Log successful notification
 		await db.insert(notificationLogs).values({
 			userId: data.userId,
-			type: 'missing-hours',
+			type: "missing-hours",
 			recipient: data.email,
 			subject,
-			status: 'sent'
+			status: "sent"
 		});
 
 		return true;
 	} catch (error) {
-		console.error('Failed to send missing hours notification:', error);
+		console.error("Failed to send missing hours notification:", error);
 
 		// Log failed notification
 		await db.insert(notificationLogs).values({
 			userId: data.userId,
-			type: 'missing-hours',
+			type: "missing-hours",
 			recipient: data.email,
 			subject,
-			status: 'failed',
-			error: error instanceof Error ? error.message : 'Unknown error'
+			status: "failed",
+			error: error instanceof Error ? error.message : "Unknown error"
 		});
 
 		return false;
@@ -118,7 +118,7 @@ export async function sendPMReport(data: PMReportData): Promise<boolean> {
 	const config = getEmailConfig();
 
 	if (!resend || !config.pmEmail) {
-		console.log('PM report disabled - no Resend API key or PM email configured');
+		console.log("PM report disabled - no Resend API key or PM email configured");
 		return false;
 	}
 
@@ -145,23 +145,23 @@ export async function sendPMReport(data: PMReportData): Promise<boolean> {
 
 		// Log successful notification
 		await db.insert(notificationLogs).values({
-			type: 'missing-hours-pm-report',
+			type: "missing-hours-pm-report",
 			recipient: config.pmEmail,
 			subject,
-			status: 'sent'
+			status: "sent"
 		});
 
 		return true;
 	} catch (error) {
-		console.error('Failed to send PM report:', error);
+		console.error("Failed to send PM report:", error);
 
 		// Log failed notification
 		await db.insert(notificationLogs).values({
-			type: 'missing-hours-pm-report',
+			type: "missing-hours-pm-report",
 			recipient: config.pmEmail,
 			subject,
-			status: 'failed',
-			error: error instanceof Error ? error.message : 'Unknown error'
+			status: "failed",
+			error: error instanceof Error ? error.message : "Unknown error"
 		});
 
 		return false;
@@ -176,7 +176,7 @@ export async function sendSystemAlert(subject: string, message: string): Promise
 	const config = getEmailConfig();
 
 	if (!resend || !config.alertEmail) {
-		console.log('System alerts disabled - no Resend API key or alert email configured');
+		console.log("System alerts disabled - no Resend API key or alert email configured");
 		return false;
 	}
 
@@ -190,7 +190,7 @@ export async function sendSystemAlert(subject: string, message: string): Promise
 
 		return true;
 	} catch (error) {
-		console.error('Failed to send system alert:', error);
+		console.error("Failed to send system alert:", error);
 		return false;
 	}
 }

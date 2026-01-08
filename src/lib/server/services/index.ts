@@ -9,8 +9,8 @@ export {
 	formatDuration,
 	HourEntryError,
 	ErrorCodes
-} from './hour-entries';
-export type { HourEntryInput, HourEntryWithRelations } from './hour-entries';
+} from "./hour-entries";
+export type { HourEntryInput, HourEntryWithRelations } from "./hour-entries";
 
 export {
 	applyPrecisionRounding,
@@ -18,12 +18,12 @@ export {
 	handleOverlapping,
 	applyHoursBalanceRounding,
 	getRoundedDurationMinutes
-} from './rounding';
-export type { RoundedEntry } from './rounding';
+} from "./rounding";
+export type { RoundedEntry } from "./rounding";
 
 export {
 	applyMinimumBilling,
 	mergeWithRoundedEntries,
 	getMinBillingDurationMinutes
-} from './minimum-billing';
-export type { MinimumBillingEntry } from './minimum-billing';
+} from "./minimum-billing";
+export type { MinimumBillingEntry } from "./minimum-billing";

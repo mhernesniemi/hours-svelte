@@ -1,10 +1,10 @@
-import { randomBytes } from 'crypto';
-import { db } from '$lib/server/db';
-import { sessions, users, type User } from '$lib/server/db/schema';
-import { eq, and, gt, lt } from 'drizzle-orm';
-import type { Cookies } from '@sveltejs/kit';
+import { randomBytes } from "crypto";
+import { db } from "$lib/server/db";
+import { sessions, users, type User } from "$lib/server/db/schema";
+import { eq, and, gt, lt } from "drizzle-orm";
+import type { Cookies } from "@sveltejs/kit";
 
-const SESSION_COOKIE_NAME = 'session';
+const SESSION_COOKIE_NAME = "session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 hours
 
 export interface SessionUser {
@@ -19,7 +19,7 @@ export interface SessionUser {
  * Create a new session for a user and set the cookie
  */
 export async function createSession(userId: number, cookies: Cookies): Promise<string> {
-	const token = randomBytes(32).toString('hex');
+	const token = randomBytes(32).toString("hex");
 	const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
 
 	await db.insert(sessions).values({
@@ -30,9 +30,9 @@ export async function createSession(userId: number, cookies: Cookies): Promise<s
 
 	cookies.set(SESSION_COOKIE_NAME, token, {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
-		sameSite: 'lax',
-		path: '/',
+		secure: process.env.NODE_ENV === "production",
+		sameSite: "lax",
+		path: "/",
 		maxAge: SESSION_DURATION_MS / 1000
 	});
 
@@ -80,7 +80,7 @@ export async function invalidateSession(cookies: Cookies): Promise<void> {
 
 	await db.delete(sessions).where(eq(sessions.token, token));
 
-	cookies.delete(SESSION_COOKIE_NAME, { path: '/' });
+	cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
 }
 
 /**
@@ -96,7 +96,7 @@ export async function deleteExpiredSessions(): Promise<number> {
  */
 export function requireAuth(user: SessionUser | null): asserts user is SessionUser {
 	if (!user) {
-		throw new Error('Unauthorized');
+		throw new Error("Unauthorized");
 	}
 }
 
@@ -105,7 +105,7 @@ export function requireAuth(user: SessionUser | null): asserts user is SessionUs
  */
 export function requireAdmin(user: SessionUser | null): asserts user is SessionUser {
 	requireAuth(user);
-	if (user.role !== 'admin') {
-		throw new Error('Forbidden');
+	if (user.role !== "admin") {
+		throw new Error("Forbidden");
 	}
 }

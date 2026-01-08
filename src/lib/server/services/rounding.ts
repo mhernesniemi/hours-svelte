@@ -1,4 +1,4 @@
-import type { HourEntry } from '$lib/server/db/schema';
+import type { HourEntry } from "$lib/server/db/schema";
 
 const ROUNDING_INTERVAL_MINUTES = 5;
 
@@ -9,7 +9,7 @@ export interface RoundedEntry {
 	startTime: Date;
 	endTime: Date;
 	description: string | null;
-	source: 'inside-rounded' | 'inside-rounded-overlapping';
+	source: "inside-rounded" | "inside-rounded-overlapping";
 	originalStartTime: Date;
 	originalEndTime: Date;
 	precisionRounding: {
@@ -42,24 +42,14 @@ function roundUp(date: Date, intervalMinutes: number): Date {
 /**
  * Check if two time ranges overlap
  */
-function rangesOverlap(
-	start1: Date,
-	end1: Date,
-	start2: Date,
-	end2: Date
-): boolean {
+function rangesOverlap(start1: Date, end1: Date, start2: Date, end2: Date): boolean {
 	return start1 < end2 && start2 < end1;
 }
 
 /**
  * Get overlap amount in milliseconds
  */
-function getOverlapMs(
-	start1: Date,
-	end1: Date,
-	start2: Date,
-	end2: Date
-): number {
+function getOverlapMs(start1: Date, end1: Date, start2: Date, end2: Date): number {
 	if (!rangesOverlap(start1, end1, start2, end2)) return 0;
 	const overlapStart = new Date(Math.max(start1.getTime(), start2.getTime()));
 	const overlapEnd = new Date(Math.min(end1.getTime(), end2.getTime()));
@@ -87,7 +77,7 @@ export function applyPrecisionRounding(entries: HourEntry[]): RoundedEntry[] {
 				startTime: roundedStart,
 				endTime: roundedEnd,
 				description: entry.description,
-				source: 'inside-rounded' as const,
+				source: "inside-rounded" as const,
 				originalStartTime: originalStart,
 				originalEndTime: originalEnd,
 				precisionRounding: {
@@ -163,7 +153,14 @@ export function handleOverlapping(entries: RoundedEntry[]): RoundedEntry[] {
 
 		// Check for overlaps with previous entries in result
 		for (const previous of result) {
-			if (rangesOverlap(previous.startTime, previous.endTime, current.startTime, current.endTime)) {
+			if (
+				rangesOverlap(
+					previous.startTime,
+					previous.endTime,
+					current.startTime,
+					current.endTime
+				)
+			) {
 				// Current entry overlaps with a previous one - mark as overtime
 				isOverlapping = true;
 				break;
@@ -171,7 +168,7 @@ export function handleOverlapping(entries: RoundedEntry[]): RoundedEntry[] {
 		}
 
 		if (isOverlapping) {
-			current.source = 'inside-rounded-overlapping';
+			current.source = "inside-rounded-overlapping";
 		}
 
 		result.push(current);

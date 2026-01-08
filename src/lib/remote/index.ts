@@ -1,11 +1,6 @@
 // Re-export all remote functions for easy importing
 
-export {
-	loginWithLdap,
-	logout,
-	getCurrentUser,
-	isAuthenticated
-} from './auth.remote';
+export { loginWithLdap, logout, getCurrentUser, isAuthenticated } from "./auth.remote";
 
 export {
 	getMonthEntries,
@@ -14,7 +9,7 @@ export {
 	updateEntry,
 	deleteEntry,
 	confirmDayEntries
-} from './hours.remote';
+} from "./hours.remote";
 
 export {
 	getCustomers,
@@ -23,7 +18,7 @@ export {
 	getPhasesWithHierarchy,
 	getWorktypes,
 	searchPhases
-} from './data.remote';
+} from "./data.remote";
 
 export {
 	getUsers,
@@ -34,4 +29,4 @@ export {
 	importWorktypes,
 	importUsers,
 	importAll
-} from './admin.remote';
+} from "./admin.remote";

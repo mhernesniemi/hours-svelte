@@ -1,4 +1,4 @@
-import { db } from '$lib/server/db';
+import { db } from "$lib/server/db";
 import {
 	hourEntries,
 	phases,
@@ -7,8 +7,8 @@ import {
 	worktypes,
 	type HourEntry,
 	type NewHourEntry
-} from '$lib/server/db/schema';
-import { eq, and, gte, lte, isNull, desc, asc } from 'drizzle-orm';
+} from "$lib/server/db/schema";
+import { eq, and, gte, lte, isNull, desc, asc } from "drizzle-orm";
 import {
 	startOfDay,
 	endOfDay,
@@ -17,10 +17,10 @@ import {
 	parseISO,
 	format,
 	differenceInMinutes
-} from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+} from "date-fns";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
-const TIMEZONE = 'Europe/Helsinki';
+const TIMEZONE = "Europe/Helsinki";
 
 // Custom error codes
 export const ErrorCodes = {
@@ -47,7 +47,7 @@ export class HourEntryError extends Error {
 	constructor(message: string, code: number) {
 		super(message);
 		this.code = code;
-		this.name = 'HourEntryError';
+		this.name = "HourEntryError";
 	}
 }
 
@@ -89,7 +89,7 @@ function validateTimeRange(time: Date): void {
 
 	if (hours === 23 && minutes >= 55) {
 		throw new HourEntryError(
-			'Times between 23:55 and 00:00 are not supported',
+			"Times between 23:55 and 00:00 are not supported",
 			ErrorCodes.UNSUPPORTED_TIME
 		);
 	}
@@ -102,15 +102,21 @@ function validateStartEnd(startTime: Date, endTime: Date | null | undefined): vo
 	if (!endTime) return;
 
 	if (endTime <= startTime) {
-		throw new HourEntryError('End time must be after start time', ErrorCodes.INVALID_TIME_RANGE);
+		throw new HourEntryError(
+			"End time must be after start time",
+			ErrorCodes.INVALID_TIME_RANGE
+		);
 	}
 
 	// Check they're on the same day in local time
 	const localStart = toZonedTime(startTime, TIMEZONE);
 	const localEnd = toZonedTime(endTime, TIMEZONE);
 
-	if (format(localStart, 'yyyy-MM-dd') !== format(localEnd, 'yyyy-MM-dd')) {
-		throw new HourEntryError('Start and end must be on the same day', ErrorCodes.INVALID_TIME_RANGE);
+	if (format(localStart, "yyyy-MM-dd") !== format(localEnd, "yyyy-MM-dd")) {
+		throw new HourEntryError(
+			"Start and end must be on the same day",
+			ErrorCodes.INVALID_TIME_RANGE
+		);
 	}
 }
 
@@ -131,21 +137,21 @@ async function validatePhase(phaseId: number): Promise<void> {
 		.limit(1);
 
 	if (result.length === 0) {
-		throw new HourEntryError('Phase not found', ErrorCodes.INVALID_PHASE);
+		throw new HourEntryError("Phase not found", ErrorCodes.INVALID_PHASE);
 	}
 
 	const { phase, case: caseRow, customer } = result[0];
 
 	if (phase.completed || phase.locked) {
-		throw new HourEntryError('Phase is completed or locked', ErrorCodes.INVALID_PHASE);
+		throw new HourEntryError("Phase is completed or locked", ErrorCodes.INVALID_PHASE);
 	}
 
 	if (caseRow.closed) {
-		throw new HourEntryError('Case is closed', ErrorCodes.INVALID_PHASE);
+		throw new HourEntryError("Case is closed", ErrorCodes.INVALID_PHASE);
 	}
 
 	if (!customer.active) {
-		throw new HourEntryError('Customer is inactive', ErrorCodes.INVALID_PHASE);
+		throw new HourEntryError("Customer is inactive", ErrorCodes.INVALID_PHASE);
 	}
 }
 
@@ -156,11 +162,11 @@ async function validateWorktype(worktypeId: number): Promise<void> {
 	const result = await db.select().from(worktypes).where(eq(worktypes.id, worktypeId)).limit(1);
 
 	if (result.length === 0) {
-		throw new HourEntryError('Worktype not found', ErrorCodes.INVALID_WORKTYPE);
+		throw new HourEntryError("Worktype not found", ErrorCodes.INVALID_WORKTYPE);
 	}
 
 	if (!result[0].active) {
-		throw new HourEntryError('Worktype is inactive', ErrorCodes.INVALID_WORKTYPE);
+		throw new HourEntryError("Worktype is inactive", ErrorCodes.INVALID_WORKTYPE);
 	}
 }
 
@@ -180,7 +186,7 @@ async function isDayLocked(userId: number, date: Date): Promise<boolean> {
 				eq(hourEntries.userId, userId),
 				gte(hourEntries.startTime, dayStart),
 				lte(hourEntries.startTime, dayEnd),
-				eq(hourEntries.status, 'confirmed'),
+				eq(hourEntries.status, "confirmed"),
 				isNull(hourEntries.deletedAt)
 			)
 		)
@@ -201,7 +207,7 @@ export async function createHourEntry(userId: number, input: HourEntryInput): Pr
 
 	// Check if day is locked
 	if (await isDayLocked(userId, input.startTime)) {
-		throw new HourEntryError('Cannot add entries to a confirmed day', ErrorCodes.DAY_LOCKED);
+		throw new HourEntryError("Cannot add entries to a confirmed day", ErrorCodes.DAY_LOCKED);
 	}
 
 	// Validate phase and worktype if provided
@@ -222,8 +228,8 @@ export async function createHourEntry(userId: number, input: HourEntryInput): Pr
 			issueCode: input.issueCode,
 			phaseId: input.phaseId,
 			worktypeId: input.worktypeId,
-			source: 'inside',
-			status: 'draft'
+			source: "inside",
+			status: "draft"
 		})
 		.returning();
 
@@ -246,15 +252,15 @@ export async function updateHourEntry(
 		.limit(1);
 
 	if (!existing) {
-		throw new HourEntryError('Hour entry not found', ErrorCodes.ENTRY_NOT_FOUND);
+		throw new HourEntryError("Hour entry not found", ErrorCodes.ENTRY_NOT_FOUND);
 	}
 
 	if (existing.userId !== userId) {
-		throw new HourEntryError('Not authorized to edit this entry', ErrorCodes.NOT_OWNER);
+		throw new HourEntryError("Not authorized to edit this entry", ErrorCodes.NOT_OWNER);
 	}
 
-	if (existing.status !== 'draft') {
-		throw new HourEntryError('Cannot edit confirmed entries', ErrorCodes.NOT_DRAFT);
+	if (existing.status !== "draft") {
+		throw new HourEntryError("Cannot edit confirmed entries", ErrorCodes.NOT_DRAFT);
 	}
 
 	// Validate times if provided
@@ -303,15 +309,15 @@ export async function deleteHourEntry(userId: number, entryId: number): Promise<
 		.limit(1);
 
 	if (!existing) {
-		throw new HourEntryError('Hour entry not found', ErrorCodes.ENTRY_NOT_FOUND);
+		throw new HourEntryError("Hour entry not found", ErrorCodes.ENTRY_NOT_FOUND);
 	}
 
 	if (existing.userId !== userId) {
-		throw new HourEntryError('Not authorized to delete this entry', ErrorCodes.NOT_OWNER);
+		throw new HourEntryError("Not authorized to delete this entry", ErrorCodes.NOT_OWNER);
 	}
 
-	if (existing.status !== 'draft') {
-		throw new HourEntryError('Cannot delete confirmed entries', ErrorCodes.NOT_DRAFT);
+	if (existing.status !== "draft") {
+		throw new HourEntryError("Cannot delete confirmed entries", ErrorCodes.NOT_DRAFT);
 	}
 
 	await db
@@ -330,7 +336,7 @@ export async function getHourEntriesForMonth(
 	userId: number,
 	year: number,
 	month: number,
-	order: 'asc' | 'desc' = 'asc'
+	order: "asc" | "desc" = "asc"
 ): Promise<HourEntryWithRelations[]> {
 	const monthStart = fromZonedTime(new Date(year, month - 1, 1), TIMEZONE);
 	const monthEnd = fromZonedTime(endOfMonth(new Date(year, month - 1, 1)), TIMEZONE);
@@ -356,7 +362,7 @@ export async function getHourEntriesForMonth(
 				isNull(hourEntries.deletedAt)
 			)
 		)
-		.orderBy(order === 'asc' ? asc(hourEntries.startTime) : desc(hourEntries.startTime));
+		.orderBy(order === "asc" ? asc(hourEntries.startTime) : desc(hourEntries.startTime));
 
 	return entries.map((row) => ({
 		...row.entry,
@@ -373,9 +379,9 @@ export async function getHourEntriesForMonth(
 											id: row.customer.id,
 											name: row.customer.name
 										}
-									: { id: 0, name: '' }
+									: { id: 0, name: "" }
 							}
-						: { id: 0, name: '', customer: { id: 0, name: '' } }
+						: { id: 0, name: "", customer: { id: 0, name: "" } }
 				}
 			: null,
 		worktype: row.worktype
@@ -436,9 +442,9 @@ export async function getHourEntriesForDay(
 											id: row.customer.id,
 											name: row.customer.name
 										}
-									: { id: 0, name: '' }
+									: { id: 0, name: "" }
 							}
-						: { id: 0, name: '', customer: { id: 0, name: '' } }
+						: { id: 0, name: "", customer: { id: 0, name: "" } }
 				}
 			: null,
 		worktype: row.worktype
@@ -467,29 +473,44 @@ export async function confirmDay(userId: number, date: Date): Promise<HourEntry[
 				eq(hourEntries.userId, userId),
 				gte(hourEntries.startTime, dayStart),
 				lte(hourEntries.startTime, dayEnd),
-				eq(hourEntries.status, 'draft'),
-				eq(hourEntries.source, 'inside'),
+				eq(hourEntries.status, "draft"),
+				eq(hourEntries.source, "inside"),
 				isNull(hourEntries.deletedAt)
 			)
 		);
 
 	if (draftEntries.length === 0) {
-		throw new HourEntryError('No draft entries found for this day', ErrorCodes.NO_ENTRIES_FOR_DAY);
+		throw new HourEntryError(
+			"No draft entries found for this day",
+			ErrorCodes.NO_ENTRIES_FOR_DAY
+		);
 	}
 
 	// Validate all entries have required fields
 	for (const entry of draftEntries) {
-		if (!entry.description || entry.description.trim() === '') {
-			throw new HourEntryError('All entries must have a description', ErrorCodes.MISSING_REQUIRED_FIELD);
+		if (!entry.description || entry.description.trim() === "") {
+			throw new HourEntryError(
+				"All entries must have a description",
+				ErrorCodes.MISSING_REQUIRED_FIELD
+			);
 		}
 		if (!entry.phaseId) {
-			throw new HourEntryError('All entries must have a phase selected', ErrorCodes.INVALID_PHASE);
+			throw new HourEntryError(
+				"All entries must have a phase selected",
+				ErrorCodes.INVALID_PHASE
+			);
 		}
 		if (!entry.worktypeId) {
-			throw new HourEntryError('All entries must have a worktype selected', ErrorCodes.INVALID_WORKTYPE);
+			throw new HourEntryError(
+				"All entries must have a worktype selected",
+				ErrorCodes.INVALID_WORKTYPE
+			);
 		}
 		if (!entry.endTime) {
-			throw new HourEntryError('All entries must have an end time', ErrorCodes.MISSING_END_TIME);
+			throw new HourEntryError(
+				"All entries must have an end time",
+				ErrorCodes.MISSING_END_TIME
+			);
 		}
 	}
 
@@ -499,7 +520,7 @@ export async function confirmDay(userId: number, date: Date): Promise<HourEntry[
 		const [confirmed] = await db
 			.update(hourEntries)
 			.set({
-				status: 'confirmed',
+				status: "confirmed",
 				updatedAt: new Date()
 			})
 			.where(eq(hourEntries.id, entry.id))

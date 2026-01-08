@@ -1,4 +1,4 @@
-import type { RoundedEntry } from './rounding';
+import type { RoundedEntry } from "./rounding";
 
 export interface MinimumBillingEntry {
 	hourEntryId: number;
@@ -6,7 +6,7 @@ export interface MinimumBillingEntry {
 	worktypeId: number | null;
 	startTime: Date;
 	endTime: Date;
-	source: 'inside-minimum-billable-time';
+	source: "inside-minimum-billable-time";
 	originalHourEntryId: number;
 }
 
@@ -157,7 +157,7 @@ export function applyMinimumBilling(
 					worktypeId: referenceEntry.worktypeId,
 					startTime: paddingStart,
 					endTime: desiredEnd,
-					source: 'inside-minimum-billable-time',
+					source: "inside-minimum-billable-time",
 					originalHourEntryId: referenceEntry.hourEntryId
 				});
 			}

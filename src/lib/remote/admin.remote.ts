@@ -1,10 +1,10 @@
-import { query, command, getRequestEvent } from '$app/server';
-import * as v from 'valibot';
-import { validateSession, requireAdmin } from '$lib/server/auth/session';
-import { db } from '$lib/server/db';
-import { users, customers, cases, phases, worktypes, syncLogs } from '$lib/server/db/schema';
-import { vismaClient } from '$lib/server/integrations/visma';
-import { desc, eq } from 'drizzle-orm';
+import { query, command, getRequestEvent } from "$app/server";
+import * as v from "valibot";
+import { validateSession, requireAdmin } from "$lib/server/auth/session";
+import { db } from "$lib/server/db";
+import { users, customers, cases, phases, worktypes, syncLogs } from "$lib/server/db/schema";
+import { vismaClient } from "$lib/server/integrations/visma";
+import { desc, eq } from "drizzle-orm";
 
 // Empty schema for functions that don't need input validation
 const EmptySchema = v.object({});
@@ -42,11 +42,7 @@ export const getSyncLogs = query(EmptySchema, async () => {
 	const user = await validateSession(event.cookies);
 	requireAdmin(user);
 
-	const result = await db
-		.select()
-		.from(syncLogs)
-		.orderBy(desc(syncLogs.startedAt))
-		.limit(50);
+	const result = await db.select().from(syncLogs).orderBy(desc(syncLogs.startedAt)).limit(50);
 
 	return result;
 });
@@ -63,9 +59,9 @@ export const importCustomers = command(EmptySchema, async () => {
 	const [log] = await db
 		.insert(syncLogs)
 		.values({
-			type: 'visma-import',
-			entityType: 'customers',
-			status: 'started',
+			type: "visma-import",
+			entityType: "customers",
+			status: "started",
 			startedAt: new Date()
 		})
 		.returning();
@@ -96,7 +92,7 @@ export const importCustomers = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'completed',
+				status: "completed",
 				recordsProcessed: processed,
 				completedAt: new Date()
 			})
@@ -107,8 +103,8 @@ export const importCustomers = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'failed',
-				error: error instanceof Error ? error.message : 'Unknown error',
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
 				completedAt: new Date()
 			})
 			.where(eq(syncLogs.id, log.id));
@@ -128,9 +124,9 @@ export const importProjects = command(EmptySchema, async () => {
 	const [log] = await db
 		.insert(syncLogs)
 		.values({
-			type: 'visma-import',
-			entityType: 'cases',
-			status: 'started',
+			type: "visma-import",
+			entityType: "cases",
+			status: "started",
 			startedAt: new Date()
 		})
 		.returning();
@@ -175,7 +171,7 @@ export const importProjects = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'completed',
+				status: "completed",
 				recordsProcessed: processed,
 				completedAt: new Date()
 			})
@@ -186,8 +182,8 @@ export const importProjects = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'failed',
-				error: error instanceof Error ? error.message : 'Unknown error',
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
 				completedAt: new Date()
 			})
 			.where(eq(syncLogs.id, log.id));
@@ -207,9 +203,9 @@ export const importPhases = command(EmptySchema, async () => {
 	const [log] = await db
 		.insert(syncLogs)
 		.values({
-			type: 'visma-import',
-			entityType: 'phases',
-			status: 'started',
+			type: "visma-import",
+			entityType: "phases",
+			status: "started",
 			startedAt: new Date()
 		})
 		.returning();
@@ -256,7 +252,7 @@ export const importPhases = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'completed',
+				status: "completed",
 				recordsProcessed: processed,
 				completedAt: new Date()
 			})
@@ -267,8 +263,8 @@ export const importPhases = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'failed',
-				error: error instanceof Error ? error.message : 'Unknown error',
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
 				completedAt: new Date()
 			})
 			.where(eq(syncLogs.id, log.id));
@@ -288,9 +284,9 @@ export const importWorktypes = command(EmptySchema, async () => {
 	const [log] = await db
 		.insert(syncLogs)
 		.values({
-			type: 'visma-import',
-			entityType: 'worktypes',
-			status: 'started',
+			type: "visma-import",
+			entityType: "worktypes",
+			status: "started",
 			startedAt: new Date()
 		})
 		.returning();
@@ -321,7 +317,7 @@ export const importWorktypes = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'completed',
+				status: "completed",
 				recordsProcessed: processed,
 				completedAt: new Date()
 			})
@@ -332,8 +328,8 @@ export const importWorktypes = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'failed',
-				error: error instanceof Error ? error.message : 'Unknown error',
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
 				completedAt: new Date()
 			})
 			.where(eq(syncLogs.id, log.id));
@@ -353,9 +349,9 @@ export const importUsers = command(EmptySchema, async () => {
 	const [log] = await db
 		.insert(syncLogs)
 		.values({
-			type: 'visma-import',
-			entityType: 'users',
-			status: 'started',
+			type: "visma-import",
+			entityType: "users",
+			status: "started",
 			startedAt: new Date()
 		})
 		.returning();
@@ -392,7 +388,7 @@ export const importUsers = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'completed',
+				status: "completed",
 				recordsProcessed: processed,
 				completedAt: new Date()
 			})
@@ -403,8 +399,8 @@ export const importUsers = command(EmptySchema, async () => {
 		await db
 			.update(syncLogs)
 			.set({
-				status: 'failed',
-				error: error instanceof Error ? error.message : 'Unknown error',
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
 				completedAt: new Date()
 			})
 			.where(eq(syncLogs.id, log.id));
@@ -451,7 +447,7 @@ export const importAll = command(EmptySchema, async () => {
 		return {
 			success: false,
 			results,
-			error: error instanceof Error ? error.message : 'Unknown error'
+			error: error instanceof Error ? error.message : "Unknown error"
 		};
 	}
 });

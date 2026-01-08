@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
+import { env } from "$env/dynamic/private";
 
 // ClickUp API base URL
-const CLICKUP_BASE_URL = 'https://api.clickup.com/api/v2';
+const CLICKUP_BASE_URL = "https://api.clickup.com/api/v2";
 
 // Type definitions for ClickUp API responses
 export interface ClickUpTask {
@@ -84,14 +84,14 @@ class ClickUpClient {
 
 	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
 		if (!this.apiToken) {
-			throw new Error('ClickUp API token not configured');
+			throw new Error("ClickUp API token not configured");
 		}
 
 		const response = await fetch(`${CLICKUP_BASE_URL}${endpoint}`, {
 			...options,
 			headers: {
 				Authorization: this.apiToken,
-				'Content-Type': 'application/json',
+				"Content-Type": "application/json",
 				...options.headers
 			}
 		});
@@ -106,12 +106,12 @@ class ClickUpClient {
 
 	// Team/Workspace
 	async getTeams(): Promise<{ teams: { id: string; name: string }[] }> {
-		return this.request('/team');
+		return this.request("/team");
 	}
 
 	// Spaces
 	async getSpaces(): Promise<{ spaces: ClickUpSpace[] }> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 		return this.request(`/team/${this.teamId}/space`);
 	}
 
@@ -139,7 +139,7 @@ class ClickUpClient {
 	}
 
 	async searchTasks(query: string): Promise<{ tasks: ClickUpTask[] }> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 		const params = new URLSearchParams({ query });
 		return this.request(`/team/${this.teamId}/task?${params}`);
 	}
@@ -150,17 +150,17 @@ class ClickUpClient {
 		endDate?: Date;
 		assignee?: number;
 	}): Promise<{ data: ClickUpTimeEntry[] }> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 
 		const queryParams = new URLSearchParams();
 		if (params.startDate) {
-			queryParams.set('start_date', params.startDate.getTime().toString());
+			queryParams.set("start_date", params.startDate.getTime().toString());
 		}
 		if (params.endDate) {
-			queryParams.set('end_date', params.endDate.getTime().toString());
+			queryParams.set("end_date", params.endDate.getTime().toString());
 		}
 		if (params.assignee) {
-			queryParams.set('assignee', params.assignee.toString());
+			queryParams.set("assignee", params.assignee.toString());
 		}
 
 		return this.request(`/team/${this.teamId}/time_entries?${queryParams}`);
@@ -173,10 +173,10 @@ class ClickUpClient {
 		duration: number; // milliseconds
 		billable?: boolean;
 	}): Promise<ClickUpTimeEntry> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 
 		return this.request(`/team/${this.teamId}/time_entries`, {
-			method: 'POST',
+			method: "POST",
 			body: JSON.stringify({
 				tid: data.taskId,
 				description: data.description,
@@ -196,19 +196,19 @@ class ClickUpClient {
 			billable: boolean;
 		}>
 	): Promise<ClickUpTimeEntry> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 
 		return this.request(`/team/${this.teamId}/time_entries/${timeEntryId}`, {
-			method: 'PUT',
+			method: "PUT",
 			body: JSON.stringify(data)
 		});
 	}
 
 	async deleteTimeEntry(timeEntryId: string): Promise<void> {
-		if (!this.teamId) throw new Error('ClickUp team ID not configured');
+		if (!this.teamId) throw new Error("ClickUp team ID not configured");
 
 		await this.request(`/team/${this.teamId}/time_entries/${timeEntryId}`, {
-			method: 'DELETE'
+			method: "DELETE"
 		});
 	}
 

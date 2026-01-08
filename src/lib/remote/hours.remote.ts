@@ -1,6 +1,6 @@
-import { query, command, getRequestEvent } from '$app/server';
-import * as v from 'valibot';
-import { validateSession, requireAuth } from '$lib/server/auth/session';
+import { query, command, getRequestEvent } from "$app/server";
+import * as v from "valibot";
+import { validateSession, requireAuth } from "$lib/server/auth/session";
 import {
 	createHourEntry,
 	updateHourEntry,
@@ -11,12 +11,12 @@ import {
 	calculateTotalMinutes,
 	formatDuration,
 	HourEntryError
-} from '$lib/server/services/hour-entries';
+} from "$lib/server/services/hour-entries";
 
 // Date schema - accepts ISO string or Date
 const DateSchema = v.pipe(
 	v.union([v.string(), v.date()]),
-	v.transform((val) => (typeof val === 'string' ? new Date(val) : val))
+	v.transform((val) => (typeof val === "string" ? new Date(val) : val))
 );
 
 /**
@@ -37,7 +37,7 @@ export const getMonthEntries = query(
 		// Group by date
 		const byDate = new Map<string, typeof entries>();
 		for (const entry of entries) {
-			const dateKey = entry.startTime.toISOString().split('T')[0];
+			const dateKey = entry.startTime.toISOString().split("T")[0];
 			if (!byDate.has(dateKey)) {
 				byDate.set(dateKey, []);
 			}
@@ -47,8 +47,8 @@ export const getMonthEntries = query(
 		// Calculate totals per day
 		const days = Array.from(byDate.entries()).map(([date, dayEntries]) => {
 			const totalMinutes = calculateTotalMinutes(dayEntries);
-			const hasUnconfirmed = dayEntries.some((e) => e.status === 'draft');
-			const allConfirmed = dayEntries.every((e) => e.status !== 'draft');
+			const hasUnconfirmed = dayEntries.some((e) => e.status === "draft");
+			const allConfirmed = dayEntries.every((e) => e.status !== "draft");
 
 			return {
 				date,
@@ -88,8 +88,8 @@ export const getDayEntries = query(
 			entries,
 			totalMinutes,
 			totalFormatted: formatDuration(totalMinutes),
-			hasUnconfirmed: entries.some((e) => e.status === 'draft'),
-			allConfirmed: entries.length > 0 && entries.every((e) => e.status !== 'draft')
+			hasUnconfirmed: entries.some((e) => e.status === "draft"),
+			allConfirmed: entries.length > 0 && entries.every((e) => e.status !== "draft")
 		};
 	}
 );

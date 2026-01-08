@@ -7,184 +7,196 @@ import {
 	boolean,
 	timestamp,
 	index
-} from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 // Users table - synced from LDAP and Visma
 export const users = pgTable(
-	'users',
+	"users",
 	{
-		id: serial('id').primaryKey(),
-		email: varchar('email', { length: 255 }).notNull().unique(),
-		firstName: varchar('first_name', { length: 100 }).notNull(),
-		lastName: varchar('last_name', { length: 100 }).notNull(),
-		ldapDn: varchar('ldap_dn', { length: 500 }),
-		vismaGuid: varchar('visma_guid', { length: 100 }),
-		role: varchar('role', { length: 20 }).notNull().default('user'),
-		countryCode: varchar('country_code', { length: 10 }).default('FI'),
-		active: boolean('active').notNull().default(true),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		id: serial("id").primaryKey(),
+		email: varchar("email", { length: 255 }).notNull().unique(),
+		firstName: varchar("first_name", { length: 100 }).notNull(),
+		lastName: varchar("last_name", { length: 100 }).notNull(),
+		ldapDn: varchar("ldap_dn", { length: 500 }),
+		vismaGuid: varchar("visma_guid", { length: 100 }),
+		role: varchar("role", { length: 20 }).notNull().default("user"),
+		countryCode: varchar("country_code", { length: 10 }).default("FI"),
+		active: boolean("active").notNull().default(true),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
-	(table) => [index('users_email_idx').on(table.email), index('users_visma_guid_idx').on(table.vismaGuid)]
+	(table) => [
+		index("users_email_idx").on(table.email),
+		index("users_visma_guid_idx").on(table.vismaGuid)
+	]
 );
 
 // Sessions table - for cookie-based auth
 export const sessions = pgTable(
-	'sessions',
+	"sessions",
 	{
-		id: serial('id').primaryKey(),
-		token: varchar('token', { length: 64 }).notNull().unique(),
-		userId: integer('user_id')
+		id: serial("id").primaryKey(),
+		token: varchar("token", { length: 64 }).notNull().unique(),
+		userId: integer("user_id")
 			.references(() => users.id)
 			.notNull(),
-		expiresAt: timestamp('expires_at').notNull(),
-		createdAt: timestamp('created_at').defaultNow().notNull()
+		expiresAt: timestamp("expires_at").notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull()
 	},
-	(table) => [index('sessions_token_idx').on(table.token), index('sessions_user_id_idx').on(table.userId)]
+	(table) => [
+		index("sessions_token_idx").on(table.token),
+		index("sessions_user_id_idx").on(table.userId)
+	]
 );
 
 // Customers table - synced from Visma
 export const customers = pgTable(
-	'customers',
+	"customers",
 	{
-		id: serial('id').primaryKey(),
-		name: varchar('name', { length: 255 }).notNull(),
-		vismaGuid: varchar('visma_guid', { length: 100 }).unique(),
-		active: boolean('active').notNull().default(true),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		id: serial("id").primaryKey(),
+		name: varchar("name", { length: 255 }).notNull(),
+		vismaGuid: varchar("visma_guid", { length: 100 }).unique(),
+		active: boolean("active").notNull().default(true),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
-	(table) => [index('customers_visma_guid_idx').on(table.vismaGuid)]
+	(table) => [index("customers_visma_guid_idx").on(table.vismaGuid)]
 );
 
 // Cases/Projects table - synced from Visma
 export const cases = pgTable(
-	'cases',
+	"cases",
 	{
-		id: serial('id').primaryKey(),
-		name: varchar('name', { length: 255 }).notNull(),
-		customerId: integer('customer_id')
+		id: serial("id").primaryKey(),
+		name: varchar("name", { length: 255 }).notNull(),
+		customerId: integer("customer_id")
 			.references(() => customers.id)
 			.notNull(),
-		vismaGuid: varchar('visma_guid', { length: 100 }).unique(),
-		closed: boolean('closed').notNull().default(false),
-		minBillableTimeInMin: integer('min_billable_time_in_min').default(0),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		vismaGuid: varchar("visma_guid", { length: 100 }).unique(),
+		closed: boolean("closed").notNull().default(false),
+		minBillableTimeInMin: integer("min_billable_time_in_min").default(0),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
 	(table) => [
-		index('cases_customer_id_idx').on(table.customerId),
-		index('cases_visma_guid_idx').on(table.vismaGuid)
+		index("cases_customer_id_idx").on(table.customerId),
+		index("cases_visma_guid_idx").on(table.vismaGuid)
 	]
 );
 
 // Phases table - synced from Visma
 export const phases = pgTable(
-	'phases',
+	"phases",
 	{
-		id: serial('id').primaryKey(),
-		name: varchar('name', { length: 255 }).notNull(),
-		caseId: integer('case_id')
+		id: serial("id").primaryKey(),
+		name: varchar("name", { length: 255 }).notNull(),
+		caseId: integer("case_id")
 			.references(() => cases.id)
 			.notNull(),
-		vismaGuid: varchar('visma_guid', { length: 100 }).unique(),
-		completed: boolean('completed').notNull().default(false),
-		locked: boolean('locked').notNull().default(false),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		vismaGuid: varchar("visma_guid", { length: 100 }).unique(),
+		completed: boolean("completed").notNull().default(false),
+		locked: boolean("locked").notNull().default(false),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
-	(table) => [index('phases_case_id_idx').on(table.caseId), index('phases_visma_guid_idx').on(table.vismaGuid)]
+	(table) => [
+		index("phases_case_id_idx").on(table.caseId),
+		index("phases_visma_guid_idx").on(table.vismaGuid)
+	]
 );
 
 // Worktypes table - synced from Visma
 export const worktypes = pgTable(
-	'worktypes',
+	"worktypes",
 	{
-		id: serial('id').primaryKey(),
-		name: varchar('name', { length: 255 }).notNull(),
-		vismaGuid: varchar('visma_guid', { length: 100 }).unique(),
-		active: boolean('active').notNull().default(true),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		id: serial("id").primaryKey(),
+		name: varchar("name", { length: 255 }).notNull(),
+		vismaGuid: varchar("visma_guid", { length: 100 }).unique(),
+		active: boolean("active").notNull().default(true),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
-	(table) => [index('worktypes_visma_guid_idx').on(table.vismaGuid)]
+	(table) => [index("worktypes_visma_guid_idx").on(table.vismaGuid)]
 );
 
 // Hour entry source types
 export type HourEntrySource =
-	| 'inside'
-	| 'visma'
-	| 'inside-rounded'
-	| 'inside-rounded-overlapping'
-	| 'inside-minimum-billable-time';
+	| "inside"
+	| "visma"
+	| "inside-rounded"
+	| "inside-rounded-overlapping"
+	| "inside-minimum-billable-time";
 
 // Hour entry status types
-export type HourEntryStatus = 'draft' | 'confirmed' | 'synced';
+export type HourEntryStatus = "draft" | "confirmed" | "synced";
 
 // Hour entries table - main hour tracking
 export const hourEntries = pgTable(
-	'hour_entries',
+	"hour_entries",
 	{
-		id: serial('id').primaryKey(),
-		userId: integer('user_id')
+		id: serial("id").primaryKey(),
+		userId: integer("user_id")
 			.references(() => users.id)
 			.notNull(),
-		phaseId: integer('phase_id').references(() => phases.id),
-		worktypeId: integer('worktype_id').references(() => worktypes.id),
-		description: text('description'),
-		issueCode: varchar('issue_code', { length: 100 }),
-		startTime: timestamp('start_time').notNull(),
-		endTime: timestamp('end_time'),
-		source: varchar('source', { length: 50 }).notNull().default('inside'),
-		status: varchar('status', { length: 20 }).notNull().default('draft'),
-		vismaGuid: varchar('visma_guid', { length: 100 }),
-		originalHourEntryId: integer('original_hour_entry_id'),
-		deletedAt: timestamp('deleted_at'),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		phaseId: integer("phase_id").references(() => phases.id),
+		worktypeId: integer("worktype_id").references(() => worktypes.id),
+		description: text("description"),
+		issueCode: varchar("issue_code", { length: 100 }),
+		startTime: timestamp("start_time").notNull(),
+		endTime: timestamp("end_time"),
+		source: varchar("source", { length: 50 }).notNull().default("inside"),
+		status: varchar("status", { length: 20 }).notNull().default("draft"),
+		vismaGuid: varchar("visma_guid", { length: 100 }),
+		originalHourEntryId: integer("original_hour_entry_id"),
+		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull()
 	},
 	(table) => [
-		index('hour_entries_user_id_idx').on(table.userId),
-		index('hour_entries_start_time_idx').on(table.startTime),
-		index('hour_entries_status_idx').on(table.status),
-		index('hour_entries_visma_guid_idx').on(table.vismaGuid)
+		index("hour_entries_user_id_idx").on(table.userId),
+		index("hour_entries_start_time_idx").on(table.startTime),
+		index("hour_entries_status_idx").on(table.status),
+		index("hour_entries_visma_guid_idx").on(table.vismaGuid)
 	]
 );
 
 // Sync log for tracking integration syncs
 export const syncLogs = pgTable(
-	'sync_logs',
+	"sync_logs",
 	{
-		id: serial('id').primaryKey(),
-		type: varchar('type', { length: 50 }).notNull(), // 'visma-import', 'visma-export', 'clickup-sync'
-		status: varchar('status', { length: 20 }).notNull(), // 'started', 'completed', 'failed'
-		entityType: varchar('entity_type', { length: 50 }), // 'customers', 'cases', 'phases', 'worktypes', 'users', 'hour-entries'
-		recordsProcessed: integer('records_processed').default(0),
-		error: text('error'),
-		startedAt: timestamp('started_at').notNull(),
-		completedAt: timestamp('completed_at'),
-		createdAt: timestamp('created_at').defaultNow().notNull()
+		id: serial("id").primaryKey(),
+		type: varchar("type", { length: 50 }).notNull(), // 'visma-import', 'visma-export', 'clickup-sync'
+		status: varchar("status", { length: 20 }).notNull(), // 'started', 'completed', 'failed'
+		entityType: varchar("entity_type", { length: 50 }), // 'customers', 'cases', 'phases', 'worktypes', 'users', 'hour-entries'
+		recordsProcessed: integer("records_processed").default(0),
+		error: text("error"),
+		startedAt: timestamp("started_at").notNull(),
+		completedAt: timestamp("completed_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull()
 	},
-	(table) => [index('sync_logs_type_idx').on(table.type), index('sync_logs_status_idx').on(table.status)]
+	(table) => [
+		index("sync_logs_type_idx").on(table.type),
+		index("sync_logs_status_idx").on(table.status)
+	]
 );
 
 // Notification log for email tracking
 export const notificationLogs = pgTable(
-	'notification_logs',
+	"notification_logs",
 	{
-		id: serial('id').primaryKey(),
-		userId: integer('user_id').references(() => users.id),
-		type: varchar('type', { length: 50 }).notNull(), // 'missing-hours', 'missing-hours-pm-report'
-		recipient: varchar('recipient', { length: 255 }).notNull(),
-		subject: varchar('subject', { length: 500 }),
-		status: varchar('status', { length: 20 }).notNull(), // 'sent', 'failed'
-		error: text('error'),
-		sentAt: timestamp('sent_at').defaultNow().notNull()
+		id: serial("id").primaryKey(),
+		userId: integer("user_id").references(() => users.id),
+		type: varchar("type", { length: 50 }).notNull(), // 'missing-hours', 'missing-hours-pm-report'
+		recipient: varchar("recipient", { length: 255 }).notNull(),
+		subject: varchar("subject", { length: 500 }),
+		status: varchar("status", { length: 20 }).notNull(), // 'sent', 'failed'
+		error: text("error"),
+		sentAt: timestamp("sent_at").defaultNow().notNull()
 	},
 	(table) => [
-		index('notification_logs_user_id_idx').on(table.userId),
-		index('notification_logs_type_idx').on(table.type)
+		index("notification_logs_user_id_idx").on(table.userId),
+		index("notification_logs_type_idx").on(table.type)
 	]
 );
 

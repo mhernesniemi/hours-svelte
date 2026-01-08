@@ -1,7 +1,7 @@
-import { env } from '$env/dynamic/private';
+import { env } from "$env/dynamic/private";
 
 // Base URL for Visma Severa REST API
-const VISMA_BASE_URL = 'https://api.severa.visma.com/rest-api/v1.0';
+const VISMA_BASE_URL = "https://api.severa.visma.com/rest-api/v1.0";
 
 // Type definitions for Visma API responses
 export interface VismaUser {
@@ -90,19 +90,19 @@ class VismaClient {
 
 		// Otherwise, use OAuth2 client credentials flow
 		if (!this.clientId || !this.clientSecret) {
-			throw new Error('Visma API credentials not configured');
+			throw new Error("Visma API credentials not configured");
 		}
 
 		const response = await fetch(`${VISMA_BASE_URL}/token`, {
-			method: 'POST',
+			method: "POST",
 			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
+				"Content-Type": "application/x-www-form-urlencoded"
 			},
 			body: new URLSearchParams({
-				grant_type: 'client_credentials',
+				grant_type: "client_credentials",
 				client_id: this.clientId,
 				client_secret: this.clientSecret,
-				scope: 'customers:read projects:read phases:read worktypes:read users:read workhours:read workhours:write'
+				scope: "customers:read projects:read phases:read worktypes:read users:read workhours:read workhours:write"
 			})
 		});
 
@@ -117,17 +117,14 @@ class VismaClient {
 		return this.accessToken!;
 	}
 
-	private async request<T>(
-		endpoint: string,
-		options: RequestInit = {}
-	): Promise<T> {
+	private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
 		const token = await this.getAccessToken();
 
 		const response = await fetch(`${VISMA_BASE_URL}${endpoint}`, {
 			...options,
 			headers: {
 				Authorization: `Bearer ${token}`,
-				'Content-Type': 'application/json',
+				"Content-Type": "application/json",
 				...options.headers
 			}
 		});
@@ -143,10 +140,7 @@ class VismaClient {
 	/**
 	 * Paginated fetch helper
 	 */
-	private async fetchAll<T>(
-		endpoint: string,
-		params: Record<string, string> = {}
-	): Promise<T[]> {
+	private async fetchAll<T>(endpoint: string, params: Record<string, string> = {}): Promise<T[]> {
 		const allItems: T[] = [];
 		let firstRow = 0;
 		const rowCount = 100;
@@ -159,9 +153,7 @@ class VismaClient {
 				rowCount: String(rowCount)
 			});
 
-			const response = await this.request<T[]>(
-				`${endpoint}?${queryParams}`
-			);
+			const response = await this.request<T[]>(`${endpoint}?${queryParams}`);
 
 			allItems.push(...response);
 			hasMore = response.length === rowCount;
@@ -173,7 +165,7 @@ class VismaClient {
 
 	// User endpoints
 	async getUsers(): Promise<VismaUser[]> {
-		return this.fetchAll<VismaUser>('/users');
+		return this.fetchAll<VismaUser>("/users");
 	}
 
 	async getUser(guid: string): Promise<VismaUser> {
@@ -186,7 +178,7 @@ class VismaClient {
 		if (changedSince) {
 			params.changedSince = changedSince.toISOString();
 		}
-		return this.fetchAll<VismaCustomer>('/customers', params);
+		return this.fetchAll<VismaCustomer>("/customers", params);
 	}
 
 	async getCustomer(guid: string): Promise<VismaCustomer> {
@@ -199,7 +191,7 @@ class VismaClient {
 		if (changedSince) {
 			params.changedSince = changedSince.toISOString();
 		}
-		return this.fetchAll<VismaProject>('/projects', params);
+		return this.fetchAll<VismaProject>("/projects", params);
 	}
 
 	async getProject(guid: string): Promise<VismaProject> {
@@ -212,7 +204,7 @@ class VismaClient {
 		if (projectGuid) {
 			params.projectGuid = projectGuid;
 		}
-		return this.fetchAll<VismaPhase>('/phases', params);
+		return this.fetchAll<VismaPhase>("/phases", params);
 	}
 
 	async getPhase(guid: string): Promise<VismaPhase> {
@@ -221,7 +213,7 @@ class VismaClient {
 
 	// Work type endpoints
 	async getWorkTypes(): Promise<VismaWorkType[]> {
-		return this.fetchAll<VismaWorkType>('/worktypes');
+		return this.fetchAll<VismaWorkType>("/worktypes");
 	}
 
 	async getWorkType(guid: string): Promise<VismaWorkType> {
@@ -236,29 +228,29 @@ class VismaClient {
 	}): Promise<VismaWorkHour[]> {
 		const queryParams: Record<string, string> = {};
 		if (params.userGuid) queryParams.userGuid = params.userGuid;
-		if (params.startDate) queryParams.startDate = params.startDate.toISOString().split('T')[0];
-		if (params.endDate) queryParams.endDate = params.endDate.toISOString().split('T')[0];
+		if (params.startDate) queryParams.startDate = params.startDate.toISOString().split("T")[0];
+		if (params.endDate) queryParams.endDate = params.endDate.toISOString().split("T")[0];
 
-		return this.fetchAll<VismaWorkHour>('/workhours', queryParams);
+		return this.fetchAll<VismaWorkHour>("/workhours", queryParams);
 	}
 
-	async createWorkHour(data: Omit<VismaWorkHour, 'guid'>): Promise<VismaWorkHour> {
-		return this.request<VismaWorkHour>('/workhours', {
-			method: 'POST',
+	async createWorkHour(data: Omit<VismaWorkHour, "guid">): Promise<VismaWorkHour> {
+		return this.request<VismaWorkHour>("/workhours", {
+			method: "POST",
 			body: JSON.stringify(data)
 		});
 	}
 
 	async updateWorkHour(guid: string, data: Partial<VismaWorkHour>): Promise<VismaWorkHour> {
 		return this.request<VismaWorkHour>(`/workhours/${guid}`, {
-			method: 'PATCH',
+			method: "PATCH",
 			body: JSON.stringify(data)
 		});
 	}
 
 	async deleteWorkHour(guid: string): Promise<void> {
 		await this.request<void>(`/workhours/${guid}`, {
-			method: 'DELETE'
+			method: "DELETE"
 		});
 	}
 }
