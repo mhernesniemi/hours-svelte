@@ -72,7 +72,7 @@
             </div>
 
             <Button variant="ghost" size="sm" onclick={handleLogout}>
-              <LogOut class="mr-2 h-4 w-4" />
+              <LogOut class="h-4 w-4" />
               Logout
             </Button>
           </div>

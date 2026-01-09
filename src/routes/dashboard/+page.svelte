@@ -526,10 +526,10 @@
                 </Button>
                 <Button type="submit" size="sm" disabled={isSubmitting}>
                   {#if isSubmitting}
-                    <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 class="h-4 w-4 animate-spin" />
                     Saving...
                   {:else}
-                    <Save class="mr-2 h-4 w-4" />
+                    <Save class="h-4 w-4" />
                     Save
                   {/if}
                 </Button>
