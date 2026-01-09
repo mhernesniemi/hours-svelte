@@ -23,7 +23,11 @@ export interface VismaCustomer {
 export interface VismaProject {
 	guid: string;
 	name: string;
-	customerGuid: string;
+	customer?: {
+		guid: string;
+		name?: string;
+		number?: number;
+	};
 	isClosed: boolean;
 	projectNumber?: string;
 }
