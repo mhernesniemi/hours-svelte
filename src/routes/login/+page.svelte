@@ -8,6 +8,8 @@
     CardHeader,
     CardTitle
   } from "$lib/components/ui/card";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
   import { Clock, AlertCircle, Loader2 } from "@lucide/svelte";
 
   let username = $state("");
@@ -65,12 +67,11 @@
         {/if}
 
         <div class="space-y-2">
-          <label for="username" class="text-sm font-medium">Username</label>
-          <input
+          <Label for="username">Username</Label>
+          <Input
             id="username"
             type="text"
             bind:value={username}
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Enter your username"
             required
             disabled={isLoading}
@@ -78,12 +79,11 @@
         </div>
 
         <div class="space-y-2">
-          <label for="password" class="text-sm font-medium">Password</label>
-          <input
+          <Label for="password">Password</Label>
+          <Input
             id="password"
             type="password"
             bind:value={password}
-            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Enter your password"
             required
             disabled={isLoading}

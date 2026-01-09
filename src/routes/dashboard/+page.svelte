@@ -13,6 +13,10 @@
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
   import * as Command from "$lib/components/ui/command";
   import * as Popover from "$lib/components/ui/popover";
+  import * as Select from "$lib/components/ui/select";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Textarea } from "$lib/components/ui/textarea";
   import { cn } from "$lib/utils";
   import {
     ChevronLeft,
@@ -398,7 +402,7 @@
 
               <!-- Row 1: Phase Selection (full width) -->
               <div class="space-y-1">
-                <label for="phase-combobox" class="text-sm font-medium">Project / Phase</label>
+                <Label for="phase-combobox">Project / Phase</Label>
                 {#await phasesPromise}
                   <Button variant="outline" class="w-full justify-between" disabled>
                     Loading phases...
@@ -460,62 +464,59 @@
               <div class="grid grid-cols-4 gap-4">
                 <!-- Worktype Selection -->
                 <div class="col-span-2 space-y-1">
-                  <label for="worktype" class="text-sm font-medium">Work Type</label>
+                  <Label for="worktype">Work Type</Label>
                   {#await worktypesPromise}
-                    <select
-                      class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                      disabled
-                    >
-                      <option>Loading...</option>
-                    </select>
+                    <Select.Root type="single" disabled>
+                      <Select.Trigger id="worktype" class="w-full">
+                        <span>Loading...</span>
+                      </Select.Trigger>
+                    </Select.Root>
                   {:then worktypes}
-                    <select
-                      id="worktype"
-                      bind:value={newWorktypeId}
-                      class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    <Select.Root
+                      type="single"
+                      onValueChange={(val) => (newWorktypeId = val ? Number(val) : null)}
                     >
-                      <option value={null}>Select work type...</option>
-                      {#each worktypes as wt}
-                        <option value={wt.id}>{wt.name}</option>
-                      {/each}
-                    </select>
+                      <Select.Trigger id="worktype" class="w-full">
+                        <span data-slot="select-value">
+                          {#if newWorktypeId}
+                            {worktypes.find((wt) => wt.id === newWorktypeId)?.name ||
+                              "Select work type..."}
+                          {:else}
+                            Select work type...
+                          {/if}
+                        </span>
+                      </Select.Trigger>
+                      <Select.Content>
+                        {#each worktypes as wt}
+                          <Select.Item value={String(wt.id)} label={wt.name} />
+                        {/each}
+                      </Select.Content>
+                    </Select.Root>
                   {/await}
                 </div>
 
                 <!-- Start time -->
                 <div class="space-y-1">
-                  <label for="startTime" class="text-sm font-medium">Start</label>
-                  <input
-                    id="startTime"
-                    type="time"
-                    bind:value={newStartTime}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                    required
-                  />
+                  <Label for="startTime">Start</Label>
+                  <Input id="startTime" type="time" bind:value={newStartTime} required />
                 </div>
 
                 <!-- End time -->
                 <div class="space-y-1">
-                  <label for="endTime" class="text-sm font-medium">End</label>
-                  <input
-                    id="endTime"
-                    type="time"
-                    bind:value={newEndTime}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                  />
+                  <Label for="endTime">End</Label>
+                  <Input id="endTime" type="time" bind:value={newEndTime} />
                 </div>
               </div>
 
               <!-- Row 3: Description -->
               <div class="space-y-1">
-                <label for="description" class="text-sm font-medium">Description</label>
-                <textarea
+                <Label for="description">Description</Label>
+                <Textarea
                   id="description"
                   bind:value={newDescription}
                   rows={2}
-                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                   placeholder="What did you work on?"
-                ></textarea>
+                />
               </div>
 
               <!-- Submit -->
