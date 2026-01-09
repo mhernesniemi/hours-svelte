@@ -65,8 +65,9 @@ export async function authenticateLdap(
 		try {
 			await userClient.bind(userDn, password);
 			await userClient.unbind();
-		} catch {
+		} catch (bindError) {
 			console.log(`LDAP: Invalid credentials for user ${username}`);
+			console.log(`LDAP: Bind error details:`, bindError);
 			return null;
 		}
 
