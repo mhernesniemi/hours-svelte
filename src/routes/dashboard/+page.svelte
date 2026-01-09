@@ -106,6 +106,8 @@
   let worktypeDropdownOpen = $state(false);
   let phaseTriggerRef = $state<HTMLButtonElement>(null!);
   let startTimeInputRef = $state<HTMLInputElement>(null!);
+  let endTimeInputRef = $state<HTMLInputElement>(null!);
+  let descriptionRef = $state<HTMLTextAreaElement>(null!);
   let isSubmitting = $state(false);
 
   function navigateWeek(direction: "prev" | "next") {
@@ -566,13 +568,19 @@
                     bind:value={newStartTime}
                     required
                     bind:ref={startTimeInputRef}
+                    oncomplete={() => endTimeInputRef?.focus()}
                   />
                 </div>
 
                 <!-- End time -->
                 <div class="space-y-1">
                   <Label for="endTime">End</Label>
-                  <TimeInput id="endTime" bind:value={newEndTime} />
+                  <TimeInput
+                    id="endTime"
+                    bind:value={newEndTime}
+                    bind:ref={endTimeInputRef}
+                    oncomplete={() => descriptionRef?.focus()}
+                  />
                 </div>
               </div>
 
@@ -582,6 +590,7 @@
                 <Textarea
                   id="description"
                   bind:value={newDescription}
+                  bind:ref={descriptionRef}
                   rows={2}
                   placeholder="What did you work on?"
                 />

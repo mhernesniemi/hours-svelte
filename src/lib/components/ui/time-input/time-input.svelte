@@ -4,11 +4,13 @@
 
   type Props = WithElementRef<Omit<HTMLInputAttributes, "type" | "value">> & {
     value?: string;
+    oncomplete?: () => void;
   };
 
   let {
     ref = $bindable(null),
     value = $bindable(""),
+    oncomplete,
     class: className,
     ...restProps
   }: Props = $props();
@@ -45,6 +47,11 @@
       value = hours;
     } else {
       value = "";
+    }
+
+    // Call oncomplete when all 4 digits are entered
+    if (val.length === 4 && oncomplete) {
+      oncomplete();
     }
   }
 
