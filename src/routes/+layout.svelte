@@ -14,7 +14,8 @@
 
   async function handleLogout() {
     await logout({});
-    goto("/login");
+    // Use window.location for full page reload to clear client state
+    window.location.href = "/login";
   }
 
   // Check if current path matches
@@ -43,9 +44,9 @@
 
             <nav class="flex items-center gap-1">
               <a
-                href="/"
+                href="/dashboard"
                 class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                class:bg-accent={isActive("/")}
+                class:bg-accent={isActive("/dashboard")}
               >
                 <Clock class="h-4 w-4" />
                 Hours

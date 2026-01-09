@@ -1,6 +1,5 @@
 <script lang="ts">
   import { loginWithLdap } from "$lib/remote";
-  import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import {
     Card,
@@ -25,7 +24,8 @@
       const result = await loginWithLdap({ username, password });
 
       if (result.success) {
-        goto("/");
+        // Use window.location for full page reload to ensure server-side session is recognized
+        window.location.href = "/dashboard";
       } else {
         error = "Invalid credentials";
       }

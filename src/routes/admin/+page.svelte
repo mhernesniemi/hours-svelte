@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-    getCurrentUser,
     getUsers,
     getSyncLogs,
     importAll,
@@ -34,20 +33,9 @@
   } from "@lucide/svelte";
   import { format } from "date-fns";
 
-  // Auth state
-  let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
-  let authChecked = $state(false);
-
-  // Check authentication on mount
-  $effect(() => {
-    getCurrentUser({}).then((u) => {
-      user = u;
-      authChecked = true;
-      if (!u) {
-        goto("/login");
-      }
-    });
-  });
+  // User comes from +page.server.ts load function
+  let { data } = $props();
+  const user = data.user;
 
   // UI state
   let isSyncing = $state<string | null>(null);
@@ -123,11 +111,7 @@
   <title>Admin - Inside</title>
 </svelte:head>
 
-{#if !authChecked}
-  <div class="flex min-h-[50vh] items-center justify-center">
-    <div class="text-muted-foreground">Loading...</div>
-  </div>
-{:else if user && user.role !== "admin"}
+{#if user.role !== "admin"}
   <div class="flex min-h-[50vh] items-center justify-center">
     <Card class="max-w-md">
       <CardContent class="flex flex-col items-center py-8">
@@ -136,11 +120,11 @@
         <p class="mt-2 text-sm text-muted-foreground">
           You need admin privileges to access this page.
         </p>
-        <Button class="mt-4" onclick={() => goto("/")}>Go to Hours</Button>
+        <Button class="mt-4" onclick={() => goto("/dashboard")}>Go to Hours</Button>
       </CardContent>
     </Card>
   </div>
-{:else if user}
+{:else}
   <div class="mx-auto max-w-5xl p-4">
     <h1 class="mb-6 text-2xl font-bold">Admin</h1>
 

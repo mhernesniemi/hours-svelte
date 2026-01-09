@@ -1,25 +1,10 @@
 <script lang="ts">
-  import { createEntry, getPhasesWithHierarchy, getWorktypes, getCurrentUser } from "$lib/remote";
+  import { createEntry, getPhasesWithHierarchy, getWorktypes } from "$lib/remote";
   import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
   import { ArrowLeft, Save, Loader2, AlertCircle, Search } from "@lucide/svelte";
   import { format, set, startOfDay } from "date-fns";
-
-  // Auth state
-  let user = $state<Awaited<ReturnType<typeof getCurrentUser>> | undefined>(undefined);
-  let authChecked = $state(false);
-
-  // Check authentication on mount
-  $effect(() => {
-    getCurrentUser({}).then((u) => {
-      user = u;
-      authChecked = true;
-      if (!u) {
-        goto("/login");
-      }
-    });
-  });
 
   // Form state
   let date = $state(format(new Date(), "yyyy-MM-dd"));
@@ -88,7 +73,7 @@
       });
 
       if (result.success) {
-        goto("/");
+        goto("/dashboard");
       } else {
         error = result.error || "Failed to create entry";
       }
@@ -104,14 +89,9 @@
   <title>New Entry - Inside</title>
 </svelte:head>
 
-{#if !authChecked}
-  <div class="flex min-h-[50vh] items-center justify-center">
-    <div class="text-muted-foreground">Loading...</div>
-  </div>
-{:else if user}
-  <div class="mx-auto max-w-2xl p-4">
+<div class="mx-auto max-w-2xl p-4">
     <div class="mb-6">
-      <Button variant="ghost" onclick={() => goto("/")}>
+      <Button variant="ghost" onclick={() => goto("/dashboard")}>
         <ArrowLeft class="mr-2 h-4 w-4" />
         Back
       </Button>
@@ -269,7 +249,7 @@
 
           <!-- Submit -->
           <div class="flex justify-end gap-3">
-            <Button type="button" variant="outline" onclick={() => goto("/")}>Cancel</Button>
+            <Button type="button" variant="outline" onclick={() => goto("/dashboard")}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>
               {#if isSubmitting}
                 <Loader2 class="mr-2 h-4 w-4 animate-spin" />
@@ -283,5 +263,4 @@
         </form>
       </CardContent>
     </Card>
-  </div>
-{/if}
+</div>
