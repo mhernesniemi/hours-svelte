@@ -77,14 +77,16 @@
 
   // New entry form state
   let showNewEntryForm = $state(false);
-  let newStartTime = $state(format(new Date(), "HH:mm"));
+  let newStartTime = $state("");
   let newEndTime = $state("");
   let newDescription = $state("");
   let newPhaseId = $state<number | null>(null);
   let newWorktypeId = $state<number | null>(null);
   let phaseSearch = $state("");
   let phaseDropdownOpen = $state(false);
+  let worktypeDropdownOpen = $state(false);
   let phaseTriggerRef = $state<HTMLButtonElement>(null!);
+  let startTimeInputRef = $state<HTMLInputElement>(null!);
   let isSubmitting = $state(false);
 
   function navigateWeek(direction: "prev" | "next") {
@@ -126,6 +128,7 @@
     newWorktypeId = null;
     phaseSearch = "";
     phaseDropdownOpen = false;
+    worktypeDropdownOpen = false;
     error = "";
   }
 
@@ -146,7 +149,12 @@
     newPhaseId = phase.id;
     phaseDropdownOpen = false;
     tick().then(() => {
-      phaseTriggerRef?.focus();
+      // Open work type dropdown if not filled, otherwise focus on start time
+      if (!newWorktypeId) {
+        worktypeDropdownOpen = true;
+      } else {
+        startTimeInputRef?.focus();
+      }
     });
   }
 
@@ -497,8 +505,14 @@
                   {:then worktypes}
                     <Select.Root
                       type="single"
+                      bind:open={worktypeDropdownOpen}
                       value={newWorktypeId ? String(newWorktypeId) : undefined}
-                      onValueChange={(val) => (newWorktypeId = val ? Number(val) : null)}
+                      onValueChange={(val) => {
+                        newWorktypeId = val ? Number(val) : null;
+                        if (val) {
+                          tick().then(() => startTimeInputRef?.focus());
+                        }
+                      }}
                     >
                       <Select.Trigger id="worktype" class="w-full">
                         <span data-slot="select-value">
@@ -522,7 +536,13 @@
                 <!-- Start time -->
                 <div class="space-y-1">
                   <Label for="startTime">Start</Label>
-                  <Input id="startTime" type="time" bind:value={newStartTime} required />
+                  <Input
+                    id="startTime"
+                    type="time"
+                    bind:value={newStartTime}
+                    required
+                    bind:ref={startTimeInputRef}
+                  />
                 </div>
 
                 <!-- End time -->
