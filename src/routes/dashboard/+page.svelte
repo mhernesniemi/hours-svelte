@@ -309,7 +309,7 @@
           {/if}
         </div>
         <button
-          class="rounded-md p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-md p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
           onclick={() => navigateWeek("next")}
           disabled={isCurrentOrFutureWeek}
         >
