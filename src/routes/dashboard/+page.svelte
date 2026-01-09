@@ -8,8 +8,12 @@
     getWorktypes
   } from "$lib/remote";
   import { goto } from "$app/navigation";
+  import { tick } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import * as Command from "$lib/components/ui/command";
+  import * as Popover from "$lib/components/ui/popover";
+  import { cn } from "$lib/utils";
   import {
     ChevronLeft,
     ChevronRight,
@@ -19,10 +23,10 @@
     Edit,
     AlertCircle,
     Plus,
-    Search,
     Save,
     Loader2,
-    X
+    X,
+    ChevronsUpDown
   } from "@lucide/svelte";
   import {
     format,
@@ -50,9 +54,7 @@
   let year = $derived(currentWeekStart.getFullYear());
 
   // Generate weekdays for the current week
-  let weekDays = $derived(
-    Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
-  );
+  let weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)));
 
   // Load entries for selected day
   let entriesPromise = $derived(getDayEntries({ date: selectedDate }));
@@ -75,15 +77,15 @@
   let newPhaseId = $state<number | null>(null);
   let newWorktypeId = $state<number | null>(null);
   let phaseSearch = $state("");
-  let showPhaseDropdown = $state(false);
+  let phaseDropdownOpen = $state(false);
+  let phaseTriggerRef = $state<HTMLButtonElement>(null!);
   let isSubmitting = $state(false);
 
   function navigateWeek(direction: "prev" | "next") {
-    currentWeekStart = direction === "prev"
-      ? subWeeks(currentWeekStart, 1)
-      : addWeeks(currentWeekStart, 1);
+    currentWeekStart =
+      direction === "prev" ? subWeeks(currentWeekStart, 1) : addWeeks(currentWeekStart, 1);
     // Select the same weekday in the new week
-    const dayOffset = weekDays.findIndex(d => isSameDay(d, selectedDate));
+    const dayOffset = weekDays.findIndex((d) => isSameDay(d, selectedDate));
     selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
   }
 
@@ -107,6 +109,7 @@
     newPhaseId = null;
     newWorktypeId = null;
     phaseSearch = "";
+    phaseDropdownOpen = false;
     error = "";
   }
 
@@ -118,9 +121,18 @@
 
   function selectPhase(phase: { id: number; fullName: string }) {
     newPhaseId = phase.id;
-    phaseSearch = phase.fullName;
-    showPhaseDropdown = false;
+    phaseDropdownOpen = false;
+    tick().then(() => {
+      phaseTriggerRef?.focus();
+    });
   }
+
+  // Clear search when dropdown opens so all options are visible
+  $effect(() => {
+    if (phaseDropdownOpen) {
+      phaseSearch = "";
+    }
+  });
 
   function getSelectedPhaseName(phases: Awaited<typeof phasesPromise>, id: number | null): string {
     if (!id) return "";
@@ -226,7 +238,7 @@
 <div class="mx-auto max-w-5xl p-4">
   <!-- Week Navigation Header -->
   <div class="mb-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Button variant="outline" size="icon" onclick={() => navigateWeek("prev")}>
           <ChevronLeft class="h-4 w-4" />
@@ -239,9 +251,7 @@
           <ChevronRight class="h-4 w-4" />
         </Button>
       </div>
-      <Button variant="outline" size="sm" onclick={goToToday}>
-        Today
-      </Button>
+      <Button variant="outline" size="sm" onclick={goToToday}>Today</Button>
     </div>
 
     <!-- Weekday Tabs -->
@@ -250,12 +260,12 @@
         <button
           type="button"
           onclick={() => selectDay(day)}
-          class="flex flex-col items-center p-2 rounded-lg transition-colors
+          class="flex flex-col items-center rounded-lg p-2 transition-colors
             {isSameDay(day, selectedDate)
-              ? 'bg-primary text-primary-foreground'
-              : isToday(day)
-                ? 'bg-accent text-accent-foreground'
-                : 'hover:bg-accent'}"
+            ? 'bg-primary text-primary-foreground'
+            : isToday(day)
+              ? 'bg-accent text-accent-foreground'
+              : 'hover:bg-accent'}"
         >
           <span class="text-xs font-medium">{formatWeekday(day)}</span>
           <span class="text-lg font-bold">{formatDayNumber(day)}</span>
@@ -321,7 +331,7 @@
       {:then dayData}
         <!-- Entries List -->
         {#if dayData.entries.length > 0}
-          <div class="divide-y divide-border mb-4">
+          <div class="mb-4 divide-y divide-border">
             {#each dayData.entries as entry}
               <div class="flex items-center justify-between py-3 first:pt-0">
                 <div class="flex-1">
@@ -347,17 +357,14 @@
                   </p>
                   {#if entry.phase}
                     <p class="mt-0.5 text-xs text-muted-foreground">
-                      {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}
+                      {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase
+                        .name}
                     </p>
                   {/if}
                 </div>
                 {#if entry.status === "draft"}
                   <div class="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onclick={() => goto(`/entry/${entry.id}`)}
-                    >
+                    <Button variant="ghost" size="icon" onclick={() => goto(`/entry/${entry.id}`)}>
                       <Edit class="h-4 w-4" />
                     </Button>
                     <Button
@@ -382,16 +389,11 @@
 
         <!-- New Entry Form -->
         {#if showNewEntryForm}
-          <div class="border-t border-border pt-4 mt-4">
+          <div class="mt-4 border-t border-border pt-4">
             <form onsubmit={handleCreateEntry} class="space-y-4">
-              <div class="flex items-center justify-between mb-2">
+              <div class="mb-2 flex items-center justify-between">
                 <h3 class="font-medium">New Entry</h3>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onclick={resetNewEntryForm}
-                >
+                <Button type="button" variant="ghost" size="icon" onclick={resetNewEntryForm}>
                   <X class="h-4 w-4" />
                 </Button>
               </div>
@@ -445,51 +447,61 @@
 
               <!-- Phase Selection -->
               <div class="space-y-1">
-                <label for="phase" class="text-sm font-medium">Project / Phase</label>
+                <label for="phase-combobox" class="text-sm font-medium">Project / Phase</label>
                 {#await phasesPromise}
-                  <input
-                    type="text"
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                    placeholder="Loading phases..."
-                    disabled
-                  />
+                  <Button variant="outline" class="w-full justify-between" disabled>
+                    Loading phases...
+                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
                 {:then phases}
-                  <div class="relative">
-                    <Search
-                      class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                    />
-                    <input
-                      id="phase"
-                      type="text"
-                      bind:value={phaseSearch}
-                      onfocus={() => (showPhaseDropdown = true)}
-                      onblur={() => setTimeout(() => (showPhaseDropdown = false), 200)}
-                      class="flex h-9 w-full rounded-md border border-input bg-background py-1 pr-3 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                      placeholder="Search project / phase..."
-                    />
-                    {#if showPhaseDropdown}
-                      <div
-                        class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-popover shadow-lg"
-                      >
-                        {#each getFilteredPhases(phases, phaseSearch) as phase}
-                          <button
-                            type="button"
-                            class="w-full px-3 py-2 text-left text-sm hover:bg-accent"
-                            onmousedown={() => selectPhase(phase)}
-                          >
-                            {phase.fullName}
-                          </button>
-                        {:else}
-                          <div class="text-muted-foreground px-3 py-2 text-sm">No phases found</div>
-                        {/each}
-                      </div>
-                    {/if}
-                  </div>
-                  {#if newPhaseId && !showPhaseDropdown}
-                    <p class="text-xs text-muted-foreground">
-                      Selected: {getSelectedPhaseName(phases, newPhaseId)}
-                    </p>
-                  {/if}
+                  <Popover.Root bind:open={phaseDropdownOpen}>
+                    <Popover.Trigger bind:ref={phaseTriggerRef}>
+                      {#snippet child({ props })}
+                        <Button
+                          {...props}
+                          id="phase-combobox"
+                          variant="outline"
+                          class="w-full justify-between"
+                          role="combobox"
+                          aria-expanded={phaseDropdownOpen}
+                        >
+                          <span class="truncate">
+                            {newPhaseId
+                              ? getSelectedPhaseName(phases, newPhaseId)
+                              : "Select project / phase..."}
+                          </span>
+                          <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      {/snippet}
+                    </Popover.Trigger>
+                    <Popover.Content class="w-(--bits-popover-anchor-width) p-0">
+                      <Command.Root shouldFilter={false}>
+                        <Command.Input
+                          placeholder="Search project / phase..."
+                          bind:value={phaseSearch}
+                        />
+                        <Command.List>
+                          <Command.Empty>No phases found.</Command.Empty>
+                          <Command.Group>
+                            {#each getFilteredPhases(phases, phaseSearch) as phase (phase.id)}
+                              <Command.Item
+                                value={phase.fullName}
+                                onSelect={() => selectPhase(phase)}
+                              >
+                                <Check
+                                  class={cn(
+                                    "mr-2 h-4 w-4",
+                                    newPhaseId !== phase.id && "text-transparent"
+                                  )}
+                                />
+                                {phase.fullName}
+                              </Command.Item>
+                            {/each}
+                          </Command.Group>
+                        </Command.List>
+                      </Command.Root>
+                    </Popover.Content>
+                  </Popover.Root>
                 {/await}
               </div>
 
@@ -536,12 +548,8 @@
           </div>
         {:else}
           <!-- Add Entry Button -->
-          <div class="border-t border-border pt-4 mt-4">
-            <Button
-              variant="outline"
-              class="w-full"
-              onclick={() => (showNewEntryForm = true)}
-            >
+          <div class="mt-4 border-t border-border pt-4">
+            <Button variant="outline" class="w-full" onclick={() => (showNewEntryForm = true)}>
               <Plus class="mr-2 h-4 w-4" />
               Add Entry
             </Button>
