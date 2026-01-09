@@ -122,7 +122,7 @@
 
   function resetNewEntryForm() {
     showNewEntryForm = false;
-    newStartTime = format(new Date(), "HH:mm");
+    newStartTime = "";
     newEndTime = "";
     newDescription = "";
     newPhaseId = null;
