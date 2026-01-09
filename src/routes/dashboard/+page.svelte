@@ -65,7 +65,17 @@
   let weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)));
 
   // Load entries for selected day
-  let entriesPromise = $derived(getDayEntries({ date: selectedDate }));
+  let entriesPromise = $state(getDayEntries({ date: selectedDate }));
+
+  // Re-fetch entries when selected date changes
+  $effect(() => {
+    entriesPromise = getDayEntries({ date: selectedDate });
+  });
+
+  // Helper to refresh entries after mutations
+  function refreshEntries() {
+    entriesPromise.refresh();
+  }
 
   // Load phases and worktypes for the form
   const phasesPromise = getPhasesWithHierarchy({});
@@ -182,7 +192,7 @@
         error = result.error || "Failed to confirm day";
       } else {
         // Refresh data
-        entriesPromise = getDayEntries({ date: selectedDate });
+        refreshEntries();
       }
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to confirm day";
@@ -202,7 +212,7 @@
       if (!result.success) {
         error = result.error || "Failed to delete entry";
       } else {
-        entriesPromise = getDayEntries({ date: selectedDate });
+        refreshEntries();
       }
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to delete entry";
@@ -240,7 +250,7 @@
         // Save the selected worktype as default for next time
         saveDefaultWorktypeId(newWorktypeId);
         resetNewEntryForm();
-        entriesPromise = getDayEntries({ date: selectedDate });
+        refreshEntries();
       } else {
         error = result.error || "Failed to create entry";
       }
