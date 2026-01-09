@@ -73,7 +73,6 @@
   let newStartTime = $state(format(new Date(), "HH:mm"));
   let newEndTime = $state("");
   let newDescription = $state("");
-  let newIssueCode = $state("");
   let newPhaseId = $state<number | null>(null);
   let newWorktypeId = $state<number | null>(null);
   let phaseSearch = $state("");
@@ -105,7 +104,6 @@
     newStartTime = format(new Date(), "HH:mm");
     newEndTime = "";
     newDescription = "";
-    newIssueCode = "";
     newPhaseId = null;
     newWorktypeId = null;
     phaseSearch = "";
@@ -199,7 +197,7 @@
         startTime: startDateTime,
         endTime: endDateTime,
         description: newDescription || null,
-        issueCode: newIssueCode || null,
+        issueCode: null,
         phaseId: newPhaseId,
         worktypeId: newWorktypeId
       });
@@ -398,54 +396,7 @@
                 </Button>
               </div>
 
-              <!-- Time inputs -->
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
-                  <label for="startTime" class="text-sm font-medium">Start</label>
-                  <input
-                    id="startTime"
-                    type="time"
-                    bind:value={newStartTime}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                    required
-                  />
-                </div>
-                <div class="space-y-1">
-                  <label for="endTime" class="text-sm font-medium">End</label>
-                  <input
-                    id="endTime"
-                    type="time"
-                    bind:value={newEndTime}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                  />
-                </div>
-              </div>
-
-              <!-- Description -->
-              <div class="space-y-1">
-                <label for="description" class="text-sm font-medium">Description</label>
-                <textarea
-                  id="description"
-                  bind:value={newDescription}
-                  rows={2}
-                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                  placeholder="What did you work on?"
-                ></textarea>
-              </div>
-
-              <!-- Issue Code -->
-              <div class="space-y-1">
-                <label for="issueCode" class="text-sm font-medium">Issue Code</label>
-                <input
-                  id="issueCode"
-                  type="text"
-                  bind:value={newIssueCode}
-                  class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                  placeholder="e.g., PROJ-123"
-                />
-              </div>
-
-              <!-- Phase Selection -->
+              <!-- Row 1: Phase Selection (full width) -->
               <div class="space-y-1">
                 <label for="phase-combobox" class="text-sm font-medium">Project / Phase</label>
                 {#await phasesPromise}
@@ -505,28 +456,66 @@
                 {/await}
               </div>
 
-              <!-- Worktype Selection -->
+              <!-- Row 2: Worktype (50%) + Start (25%) + End (25%) -->
+              <div class="grid grid-cols-4 gap-4">
+                <!-- Worktype Selection -->
+                <div class="col-span-2 space-y-1">
+                  <label for="worktype" class="text-sm font-medium">Work Type</label>
+                  {#await worktypesPromise}
+                    <select
+                      class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      disabled
+                    >
+                      <option>Loading...</option>
+                    </select>
+                  {:then worktypes}
+                    <select
+                      id="worktype"
+                      bind:value={newWorktypeId}
+                      class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    >
+                      <option value={null}>Select work type...</option>
+                      {#each worktypes as wt}
+                        <option value={wt.id}>{wt.name}</option>
+                      {/each}
+                    </select>
+                  {/await}
+                </div>
+
+                <!-- Start time -->
+                <div class="space-y-1">
+                  <label for="startTime" class="text-sm font-medium">Start</label>
+                  <input
+                    id="startTime"
+                    type="time"
+                    bind:value={newStartTime}
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    required
+                  />
+                </div>
+
+                <!-- End time -->
+                <div class="space-y-1">
+                  <label for="endTime" class="text-sm font-medium">End</label>
+                  <input
+                    id="endTime"
+                    type="time"
+                    bind:value={newEndTime}
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- Row 3: Description -->
               <div class="space-y-1">
-                <label for="worktype" class="text-sm font-medium">Work Type</label>
-                {#await worktypesPromise}
-                  <select
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                    disabled
-                  >
-                    <option>Loading...</option>
-                  </select>
-                {:then worktypes}
-                  <select
-                    id="worktype"
-                    bind:value={newWorktypeId}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-                  >
-                    <option value={null}>Select work type...</option>
-                    {#each worktypes as wt}
-                      <option value={wt.id}>{wt.name}</option>
-                    {/each}
-                  </select>
-                {/await}
+                <label for="description" class="text-sm font-medium">Description</label>
+                <textarea
+                  id="description"
+                  bind:value={newDescription}
+                  rows={2}
+                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  placeholder="What did you work on?"
+                ></textarea>
               </div>
 
               <!-- Submit -->
