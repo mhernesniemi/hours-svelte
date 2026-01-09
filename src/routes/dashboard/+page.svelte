@@ -18,6 +18,7 @@
   import * as Popover from "$lib/components/ui/popover";
   import * as Select from "$lib/components/ui/select";
   import { Input } from "$lib/components/ui/input";
+  import { TimeInput } from "$lib/components/ui/time-input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { cn } from "$lib/utils";
@@ -536,9 +537,8 @@
                 <!-- Start time -->
                 <div class="space-y-1">
                   <Label for="startTime">Start</Label>
-                  <Input
+                  <TimeInput
                     id="startTime"
-                    type="time"
                     bind:value={newStartTime}
                     required
                     bind:ref={startTimeInputRef}
@@ -548,7 +548,7 @@
                 <!-- End time -->
                 <div class="space-y-1">
                   <Label for="endTime">End</Label>
-                  <Input id="endTime" type="time" bind:value={newEndTime} />
+                  <TimeInput id="endTime" bind:value={newEndTime} />
                 </div>
               </div>
 

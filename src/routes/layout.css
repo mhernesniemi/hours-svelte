@@ -118,12 +118,4 @@
 	body {
 		@apply bg-background text-foreground;
 	}
-
-	/* Hide native time picker controls */
-	input[type="time"]::-webkit-calendar-picker-indicator {
-		display: none;
-	}
-	input[type="time"]::-webkit-inner-spin-button {
-		display: none;
-	}
 }
