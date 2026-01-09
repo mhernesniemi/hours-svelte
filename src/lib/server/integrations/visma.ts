@@ -35,7 +35,11 @@ export interface VismaProject {
 export interface VismaPhase {
 	guid: string;
 	name: string;
-	projectGuid: string;
+	projectGuid?: string; // Optional - API may not always return this
+	project?: {
+		guid: string;
+		name?: string;
+	};
 	isCompleted: boolean;
 	isLocked: boolean;
 }

@@ -226,43 +226,52 @@ export const importPhases = command(EmptySchema, async () => {
 		.returning();
 
 	try {
-		const vismaPhases = await vismaClient.getPhases();
-		let processed = 0;
-
-		// Get case mapping
+		// Get case mapping first
 		const caseMap = new Map<string, number>();
 		const allCases = await db.select().from(cases);
 		for (const c of allCases) {
 			if (c.vismaGuid) caseMap.set(c.vismaGuid, c.id);
 		}
 
-		for (const vph of vismaPhases) {
-			const caseId = caseMap.get(vph.projectGuid);
-			if (!caseId) {
-				console.log(`Skipping phase ${vph.name} - case not found: ${vph.projectGuid}`);
-				continue;
-			}
+		console.log(`[ImportPhases] Found ${caseMap.size} cases in database for phase mapping`);
 
-			await db
-				.insert(phases)
-				.values({
-					name: vph.name,
-					vismaGuid: vph.guid,
-					caseId,
-					completed: vph.isCompleted,
-					locked: vph.isLocked
-				})
-				.onConflictDoUpdate({
-					target: phases.vismaGuid,
-					set: {
-						name: vph.name,
-						completed: vph.isCompleted,
-						locked: vph.isLocked,
-						updatedAt: new Date()
-					}
-				});
-			processed++;
+		let processed = 0;
+
+		// Fetch phases project by project to ensure we have projectGuid
+		// This is more reliable than fetching all phases at once
+		for (const [projectGuid, caseId] of caseMap.entries()) {
+			try {
+				const projectPhases = await vismaClient.getPhases(projectGuid);
+
+				for (const vph of projectPhases) {
+					await db
+						.insert(phases)
+						.values({
+							name: vph.name,
+							vismaGuid: vph.guid,
+							caseId,
+							completed: vph.isCompleted,
+							locked: vph.isLocked
+						})
+						.onConflictDoUpdate({
+							target: phases.vismaGuid,
+							set: {
+								name: vph.name,
+								completed: vph.isCompleted,
+								locked: vph.isLocked,
+								updatedAt: new Date()
+							}
+						});
+					processed++;
+				}
+			} catch (error) {
+				console.error(`[ImportPhases] Error fetching phases for project ${projectGuid}:`, error);
+				// Continue with next project
+			}
 		}
+
+		console.log(`[ImportPhases] Processed ${processed} phases from ${caseMap.size} projects`);
+
 
 		await db
 			.update(syncLogs)
