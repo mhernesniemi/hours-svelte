@@ -60,6 +60,7 @@
   // Derived week info
   let weekNumber = $derived(getISOWeek(currentWeekStart));
   let year = $derived(currentWeekStart.getFullYear());
+  let currentYear = $derived(new Date().getFullYear());
 
   // Generate weekdays for the current week
   let weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)));
@@ -106,11 +107,6 @@
     // Select the same weekday in the new week
     const dayOffset = weekDays.findIndex((d) => isSameDay(d, selectedDate));
     selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
-  }
-
-  function goToToday() {
-    currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    selectedDate = new Date();
   }
 
   function selectDay(day: Date) {
@@ -282,18 +278,19 @@
   <div class="mb-6">
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <Button variant="outline" size="icon" onclick={() => navigateWeek("prev")}>
+        <button class="rounded-md p-2 hover:bg-accent" onclick={() => navigateWeek("prev")}>
           <ChevronLeft class="h-4 w-4" />
-        </Button>
-        <div class="text-center">
-          <h1 class="text-xl font-bold">Week {weekNumber}</h1>
-          <p class="text-sm text-muted-foreground">{year}</p>
+        </button>
+        <div class="flex items-center gap-2 text-center">
+          <h1 class="text-lg font-bold">Week {weekNumber}</h1>
+          {#if year !== currentYear}
+            <p class="text-muted-foreground">({year})</p>
+          {/if}
         </div>
-        <Button variant="outline" size="icon" onclick={() => navigateWeek("next")}>
+        <button class="rounded-md p-2 hover:bg-accent" onclick={() => navigateWeek("next")}>
           <ChevronRight class="h-4 w-4" />
-        </Button>
+        </button>
       </div>
-      <Button variant="outline" size="sm" onclick={goToToday}>Today</Button>
     </div>
 
     <!-- Weekday Tabs -->
