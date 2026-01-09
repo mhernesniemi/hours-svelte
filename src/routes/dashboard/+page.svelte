@@ -8,6 +8,9 @@
     getWorktypes
   } from "$lib/remote";
   import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
+
+  const DEFAULT_WORKTYPE_KEY = "inside-default-worktype";
   import { tick } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
@@ -103,6 +106,17 @@
     resetNewEntryForm();
   }
 
+  function getDefaultWorktypeId(): number | null {
+    if (!browser) return null;
+    const saved = localStorage.getItem(DEFAULT_WORKTYPE_KEY);
+    return saved ? Number(saved) : null;
+  }
+
+  function saveDefaultWorktypeId(id: number | null) {
+    if (!browser || !id) return;
+    localStorage.setItem(DEFAULT_WORKTYPE_KEY, String(id));
+  }
+
   function resetNewEntryForm() {
     showNewEntryForm = false;
     newStartTime = format(new Date(), "HH:mm");
@@ -117,6 +131,7 @@
 
   async function handleAddEntry() {
     showNewEntryForm = true;
+    newWorktypeId = getDefaultWorktypeId();
     await tick();
     phaseDropdownOpen = true;
   }
@@ -213,6 +228,8 @@
       });
 
       if (result.success) {
+        // Save the selected worktype as default for next time
+        saveDefaultWorktypeId(newWorktypeId);
         resetNewEntryForm();
         entriesPromise = getDayEntries({ date: selectedDate });
       } else {
@@ -480,6 +497,7 @@
                   {:then worktypes}
                     <Select.Root
                       type="single"
+                      value={newWorktypeId ? String(newWorktypeId) : undefined}
                       onValueChange={(val) => (newWorktypeId = val ? Number(val) : null)}
                     >
                       <Select.Trigger id="worktype" class="w-full">
