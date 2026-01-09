@@ -96,6 +96,25 @@ function validateTimeRange(time: Date): void {
 }
 
 /**
+ * Validate that the date is not in the future
+ */
+function validateNotFutureDate(date: Date): void {
+	const localDate = toZonedTime(date, TIMEZONE);
+	const today = toZonedTime(new Date(), TIMEZONE);
+
+	// Compare only dates (not time)
+	const dateStr = format(localDate, "yyyy-MM-dd");
+	const todayStr = format(today, "yyyy-MM-dd");
+
+	if (dateStr > todayStr) {
+		throw new HourEntryError(
+			"Cannot add entries for future dates",
+			ErrorCodes.DATE_OUT_OF_RANGE
+		);
+	}
+}
+
+/**
  * Validate that end time is after start time
  */
 function validateStartEnd(startTime: Date, endTime: Date | null | undefined): void {
@@ -199,6 +218,7 @@ async function isDayLocked(userId: number, date: Date): Promise<boolean> {
  * Create a new hour entry
  */
 export async function createHourEntry(userId: number, input: HourEntryInput): Promise<HourEntry> {
+	validateNotFutureDate(input.startTime);
 	validateTimeRange(input.startTime);
 	if (input.endTime) {
 		validateTimeRange(input.endTime);
@@ -267,6 +287,7 @@ export async function updateHourEntry(
 	const newStartTime = input.startTime ?? existing.startTime;
 	const newEndTime = input.endTime !== undefined ? input.endTime : existing.endTime;
 
+	validateNotFutureDate(newStartTime);
 	validateTimeRange(newStartTime);
 	if (newEndTime) {
 		validateTimeRange(newEndTime);

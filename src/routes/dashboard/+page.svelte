@@ -46,6 +46,7 @@
     getISOWeek,
     isToday,
     isSameDay,
+    isFuture,
     set,
     startOfDay
   } from "date-fns";
@@ -302,8 +303,10 @@
     >
       <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
         {#each weekDays as day}
+          {@const dayIsFuture = isFuture(startOfDay(day))}
           <Tabs.Trigger
             value={format(day, "yyyy-MM-dd")}
+            disabled={dayIsFuture}
             class={cn(
               "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
               "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
