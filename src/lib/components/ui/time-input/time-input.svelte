@@ -98,6 +98,7 @@
   bind:this={ref}
   type="text"
   inputmode="numeric"
+  autocomplete="off"
   {value}
   maxlength="5"
   placeholder="HH:MM"
