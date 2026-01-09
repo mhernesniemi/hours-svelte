@@ -11,13 +11,12 @@
   import { browser } from "$app/environment";
 
   const DEFAULT_WORKTYPE_KEY = "inside-default-worktype";
-  import { tick } from "svelte";
+  import { tick, untrack } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
   import * as Command from "$lib/components/ui/command";
   import * as Popover from "$lib/components/ui/popover";
   import * as Select from "$lib/components/ui/select";
-  import { Input } from "$lib/components/ui/input";
   import { TimeInput } from "$lib/components/ui/time-input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
@@ -65,7 +64,7 @@
   let weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)));
 
   // Load entries for selected day
-  let entriesPromise = $state(getDayEntries({ date: selectedDate }));
+  let entriesPromise = $state(untrack(() => getDayEntries({ date: selectedDate })));
 
   // Re-fetch entries when selected date changes
   $effect(() => {
@@ -202,8 +201,6 @@
   }
 
   async function handleDeleteEntry(entryId: number) {
-    if (!confirm("Are you sure you want to delete this entry?")) return;
-
     error = "";
     deletingEntry = entryId;
 
