@@ -38,8 +38,8 @@
       minutes = m.toString().padStart(minutes.length, "0");
     }
 
-    // Combine with colon if we have minutes
-    if (minutes) {
+    // Combine with colon after 2 digits (hours complete)
+    if (hours.length === 2) {
       value = hours + ":" + minutes;
     } else if (hours) {
       value = hours;
@@ -52,6 +52,22 @@
     const target = e.target as HTMLInputElement;
     // Select all on focus for easy replacement
     target.select();
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    // Handle backspace to skip the colon
+    if (e.key === "Backspace") {
+      const target = e.target as HTMLInputElement;
+      const cursorPos = target.selectionStart ?? 0;
+
+      // If cursor is right after the colon (position 3) and nothing selected
+      if (cursorPos === 3 && target.selectionStart === target.selectionEnd) {
+        e.preventDefault();
+        // Remove the last digit of hours (position 1) and the colon
+        const digits = value.replace(/\D/g, "");
+        value = digits.slice(0, 1);
+      }
+    }
   }
 
   function onBlur() {
@@ -88,10 +104,11 @@
   oninput={onInput}
   onfocus={onFocus}
   onblur={onBlur}
+  onkeydown={onKeyDown}
   class={cn(
-    "border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base tabular-nums shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-    "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+    "flex h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 py-1 text-base tabular-nums shadow-xs ring-offset-background transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
+    "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+    "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
     className
   )}
   {...restProps}
