@@ -1,58 +1,149 @@
 <script lang="ts">
-  import { getMonthEntries, confirmDayEntries, deleteEntry } from "$lib/remote";
+  import {
+    getDayEntries,
+    createEntry,
+    confirmDayEntries,
+    deleteEntry,
+    getPhasesWithHierarchy,
+    getWorktypes
+  } from "$lib/remote";
   import { goto } from "$app/navigation";
   import { Button } from "$lib/components/ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card";
   import {
-    Plus,
     ChevronLeft,
     ChevronRight,
     Check,
     Clock,
     Trash2,
     Edit,
-    AlertCircle
+    AlertCircle,
+    Plus,
+    Search,
+    Save,
+    Loader2,
+    X
   } from "@lucide/svelte";
-  import { format, addMonths, subMonths, startOfMonth, parseISO } from "date-fns";
+  import {
+    format,
+    startOfWeek,
+    endOfWeek,
+    addWeeks,
+    subWeeks,
+    addDays,
+    getISOWeek,
+    isToday,
+    isSameDay,
+    set,
+    startOfDay
+  } from "date-fns";
 
   // User comes from +page.server.ts load function
   let { data } = $props();
 
-  // Current month state
-  let currentDate = $state(startOfMonth(new Date()));
+  // Current week state - start of week (Monday)
+  let currentWeekStart = $state(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  let selectedDate = $state(new Date());
 
-  // Derived month info
-  let year = $derived(currentDate.getFullYear());
-  let month = $derived(currentDate.getMonth() + 1);
+  // Derived week info
+  let weekNumber = $derived(getISOWeek(currentWeekStart));
+  let year = $derived(currentWeekStart.getFullYear());
 
-  // Load entries for current month
-  let entriesPromise = $derived(getMonthEntries({ year, month }));
+  // Generate weekdays for the current week
+  let weekDays = $derived(
+    Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
+  );
 
-  // Track confirmation loading state
-  let confirmingDay = $state<string | null>(null);
+  // Load entries for selected day
+  let entriesPromise = $derived(getDayEntries({ date: selectedDate }));
+
+  // Load phases and worktypes for the form
+  const phasesPromise = getPhasesWithHierarchy({});
+  const worktypesPromise = getWorktypes({});
+
+  // UI state
+  let confirmingDay = $state(false);
   let deletingEntry = $state<number | null>(null);
   let error = $state("");
 
-  function navigateMonth(direction: "prev" | "next") {
-    currentDate = direction === "prev" ? subMonths(currentDate, 1) : addMonths(currentDate, 1);
+  // New entry form state
+  let showNewEntryForm = $state(false);
+  let newStartTime = $state(format(new Date(), "HH:mm"));
+  let newEndTime = $state("");
+  let newDescription = $state("");
+  let newIssueCode = $state("");
+  let newPhaseId = $state<number | null>(null);
+  let newWorktypeId = $state<number | null>(null);
+  let phaseSearch = $state("");
+  let showPhaseDropdown = $state(false);
+  let isSubmitting = $state(false);
+
+  function navigateWeek(direction: "prev" | "next") {
+    currentWeekStart = direction === "prev"
+      ? subWeeks(currentWeekStart, 1)
+      : addWeeks(currentWeekStart, 1);
+    // Select the same weekday in the new week
+    const dayOffset = weekDays.findIndex(d => isSameDay(d, selectedDate));
+    selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
   }
 
-  async function handleConfirmDay(dateStr: string) {
+  function goToToday() {
+    currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    selectedDate = new Date();
+  }
+
+  function selectDay(day: Date) {
+    selectedDate = day;
+    // Reset form when changing days
+    resetNewEntryForm();
+  }
+
+  function resetNewEntryForm() {
+    showNewEntryForm = false;
+    newStartTime = format(new Date(), "HH:mm");
+    newEndTime = "";
+    newDescription = "";
+    newIssueCode = "";
+    newPhaseId = null;
+    newWorktypeId = null;
+    phaseSearch = "";
     error = "";
-    confirmingDay = dateStr;
+  }
+
+  function getFilteredPhases(phases: Awaited<typeof phasesPromise>, search: string) {
+    if (!search) return phases.slice(0, 20);
+    const lower = search.toLowerCase();
+    return phases.filter((p) => p.fullName.toLowerCase().includes(lower)).slice(0, 20);
+  }
+
+  function selectPhase(phase: { id: number; fullName: string }) {
+    newPhaseId = phase.id;
+    phaseSearch = phase.fullName;
+    showPhaseDropdown = false;
+  }
+
+  function getSelectedPhaseName(phases: Awaited<typeof phasesPromise>, id: number | null): string {
+    if (!id) return "";
+    const phase = phases.find((p) => p.id === id);
+    return phase?.fullName || "";
+  }
+
+  async function handleConfirmDay() {
+    error = "";
+    confirmingDay = true;
 
     try {
-      const result = await confirmDayEntries({ date: parseISO(dateStr) });
+      const result = await confirmDayEntries({ date: selectedDate });
       if (!result.success) {
         error = result.error || "Failed to confirm day";
       } else {
         // Refresh data
-        entriesPromise = getMonthEntries({ year, month });
+        entriesPromise = getDayEntries({ date: selectedDate });
       }
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to confirm day";
     } finally {
-      confirmingDay = null;
+      confirmingDay = false;
     }
   }
 
@@ -67,7 +158,7 @@
       if (!result.success) {
         error = result.error || "Failed to delete entry";
       } else {
-        entriesPromise = getMonthEntries({ year, month });
+        entriesPromise = getDayEntries({ date: selectedDate });
       }
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to delete entry";
@@ -76,13 +167,55 @@
     }
   }
 
+  async function handleCreateEntry(e: Event) {
+    e.preventDefault();
+    error = "";
+    isSubmitting = true;
+
+    try {
+      const dateObj = startOfDay(selectedDate);
+      const [startHour, startMin] = newStartTime.split(":").map(Number);
+      const startDateTime = set(dateObj, { hours: startHour, minutes: startMin });
+
+      let endDateTime: Date | null = null;
+      if (newEndTime) {
+        const [endHour, endMin] = newEndTime.split(":").map(Number);
+        endDateTime = set(dateObj, { hours: endHour, minutes: endMin });
+      }
+
+      const result = await createEntry({
+        startTime: startDateTime,
+        endTime: endDateTime,
+        description: newDescription || null,
+        issueCode: newIssueCode || null,
+        phaseId: newPhaseId,
+        worktypeId: newWorktypeId
+      });
+
+      if (result.success) {
+        resetNewEntryForm();
+        entriesPromise = getDayEntries({ date: selectedDate });
+      } else {
+        error = result.error || "Failed to create entry";
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to create entry";
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
   function formatTime(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
     return format(d, "HH:mm");
   }
 
-  function formatDate(dateStr: string): string {
-    return format(parseISO(dateStr), "EEEE, MMM d");
+  function formatWeekday(date: Date): string {
+    return format(date, "EEE");
+  }
+
+  function formatDayNumber(date: Date): string {
+    return format(date, "d");
   }
 </script>
 
@@ -91,175 +224,335 @@
 </svelte:head>
 
 <div class="mx-auto max-w-5xl p-4">
-    <!-- Month Navigation -->
-    <div class="mb-6 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <h1 class="text-2xl font-bold">{format(currentDate, "MMMM yyyy")}</h1>
-        <div class="flex gap-1">
-          <Button variant="outline" size="icon" onclick={() => navigateMonth("prev")}>
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onclick={() => navigateMonth("next")}>
-            <ChevronRight class="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={() => (currentDate = startOfMonth(new Date()))}
-          >
-            Today
-          </Button>
+  <!-- Week Navigation Header -->
+  <div class="mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <Button variant="outline" size="icon" onclick={() => navigateWeek("prev")}>
+          <ChevronLeft class="h-4 w-4" />
+        </Button>
+        <div class="text-center">
+          <h1 class="text-xl font-bold">Week {weekNumber}</h1>
+          <p class="text-sm text-muted-foreground">{year}</p>
         </div>
+        <Button variant="outline" size="icon" onclick={() => navigateWeek("next")}>
+          <ChevronRight class="h-4 w-4" />
+        </Button>
       </div>
-
-      <Button onclick={() => goto("/entry/new")}>
-        <Plus class="mr-2 h-4 w-4" />
-        Add Entry
+      <Button variant="outline" size="sm" onclick={goToToday}>
+        Today
       </Button>
     </div>
 
-    {#if error}
-      <div
-        class="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
-      >
-        <AlertCircle class="h-4 w-4" />
-        {error}
-      </div>
-    {/if}
+    <!-- Weekday Tabs -->
+    <div class="grid grid-cols-7 gap-1">
+      {#each weekDays as day}
+        <button
+          type="button"
+          onclick={() => selectDay(day)}
+          class="flex flex-col items-center p-2 rounded-lg transition-colors
+            {isSameDay(day, selectedDate)
+              ? 'bg-primary text-primary-foreground'
+              : isToday(day)
+                ? 'bg-accent text-accent-foreground'
+                : 'hover:bg-accent'}"
+        >
+          <span class="text-xs font-medium">{formatWeekday(day)}</span>
+          <span class="text-lg font-bold">{formatDayNumber(day)}</span>
+        </button>
+      {/each}
+    </div>
+  </div>
 
-    {#await entriesPromise}
-      <div class="flex min-h-[30vh] items-center justify-center">
-        <div class="text-muted-foreground">Loading entries...</div>
-      </div>
-    {:then data}
-      <!-- Monthly Summary -->
-      <Card class="mb-6">
-        <CardContent class="py-4">
-          <div class="flex items-center justify-between">
+  {#if error}
+    <div
+      class="mb-4 flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+    >
+      <AlertCircle class="h-4 w-4" />
+      {error}
+    </div>
+  {/if}
+
+  <!-- Selected Day Content -->
+  <Card>
+    <CardHeader class="pb-2">
+      <div class="flex items-center justify-between">
+        <CardTitle class="text-lg">
+          {format(selectedDate, "EEEE, MMMM d")}
+        </CardTitle>
+        {#await entriesPromise then dayData}
+          <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
-              <Clock class="h-5 w-5 text-muted-foreground" />
-              <span class="text-sm text-muted-foreground">Total this month:</span>
+              <Clock class="h-4 w-4 text-muted-foreground" />
+              <span class="text-sm font-medium">{dayData.totalFormatted}</span>
             </div>
-            <span class="text-lg font-semibold">{data.totalFormatted}</span>
+            {#if dayData.allConfirmed}
+              <span
+                class="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+              >
+                <Check class="h-3 w-3" />
+                Confirmed
+              </span>
+            {:else if dayData.hasUnconfirmed}
+              <Button
+                size="sm"
+                variant="outline"
+                onclick={handleConfirmDay}
+                disabled={confirmingDay}
+              >
+                {#if confirmingDay}
+                  <Loader2 class="mr-1 h-4 w-4 animate-spin" />
+                  Confirming...
+                {:else}
+                  <Check class="mr-1 h-4 w-4" />
+                  Confirm Day
+                {/if}
+              </Button>
+            {/if}
           </div>
-        </CardContent>
-      </Card>
-
-      <!-- Days with entries -->
-      {#if data.days.length === 0}
-        <Card>
-          <CardContent class="flex flex-col items-center justify-center py-12">
-            <Clock class="mb-4 h-12 w-12 text-muted-foreground" />
-            <p class="mb-4 text-muted-foreground">No entries for this month</p>
-            <Button onclick={() => goto("/entry/new")}>
-              <Plus class="mr-2 h-4 w-4" />
-              Add your first entry
-            </Button>
-          </CardContent>
-        </Card>
-      {:else}
-        <div class="space-y-4">
-          {#each data.days as day}
-            <Card>
-              <CardHeader class="pb-2">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <CardTitle class="text-base">{formatDate(day.date)}</CardTitle>
-                    {#if day.allConfirmed}
+        {/await}
+      </div>
+    </CardHeader>
+    <CardContent>
+      {#await entriesPromise}
+        <div class="flex items-center justify-center py-8">
+          <div class="text-muted-foreground">Loading entries...</div>
+        </div>
+      {:then dayData}
+        <!-- Entries List -->
+        {#if dayData.entries.length > 0}
+          <div class="divide-y divide-border mb-4">
+            {#each dayData.entries as entry}
+              <div class="flex items-center justify-between py-3 first:pt-0">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-sm">
+                      {formatTime(entry.startTime)}
+                      {#if entry.endTime}
+                        - {formatTime(entry.endTime)}
+                      {:else}
+                        <span class="text-muted-foreground">ongoing</span>
+                      {/if}
+                    </span>
+                    {#if entry.status === "draft"}
                       <span
-                        class="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                        class="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
                       >
-                        <Check class="h-3 w-3" />
-                        Confirmed
+                        Draft
                       </span>
                     {/if}
                   </div>
-                  <div class="flex items-center gap-3">
-                    <span class="text-sm text-muted-foreground">{day.totalFormatted}</span>
-                    {#if day.hasUnconfirmed}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onclick={() => handleConfirmDay(day.date)}
-                        disabled={confirmingDay === day.date}
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    {entry.description || "No description"}
+                  </p>
+                  {#if entry.phase}
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                      {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}
+                    </p>
+                  {/if}
+                </div>
+                {#if entry.status === "draft"}
+                  <div class="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={() => goto(`/entry/${entry.id}`)}
+                    >
+                      <Edit class="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onclick={() => handleDeleteEntry(entry.id)}
+                      disabled={deletingEntry === entry.id}
+                    >
+                      <Trash2 class="h-4 w-4" />
+                    </Button>
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {:else if !showNewEntryForm}
+          <div class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <Clock class="mb-2 h-8 w-8" />
+            <p class="text-sm">No entries for this day</p>
+          </div>
+        {/if}
+
+        <!-- New Entry Form -->
+        {#if showNewEntryForm}
+          <div class="border-t border-border pt-4 mt-4">
+            <form onsubmit={handleCreateEntry} class="space-y-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-medium">New Entry</h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onclick={resetNewEntryForm}
+                >
+                  <X class="h-4 w-4" />
+                </Button>
+              </div>
+
+              <!-- Time inputs -->
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label for="startTime" class="text-sm font-medium">Start</label>
+                  <input
+                    id="startTime"
+                    type="time"
+                    bind:value={newStartTime}
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                    required
+                  />
+                </div>
+                <div class="space-y-1">
+                  <label for="endTime" class="text-sm font-medium">End</label>
+                  <input
+                    id="endTime"
+                    type="time"
+                    bind:value={newEndTime}
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="space-y-1">
+                <label for="description" class="text-sm font-medium">Description</label>
+                <textarea
+                  id="description"
+                  bind:value={newDescription}
+                  rows={2}
+                  class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  placeholder="What did you work on?"
+                ></textarea>
+              </div>
+
+              <!-- Issue Code -->
+              <div class="space-y-1">
+                <label for="issueCode" class="text-sm font-medium">Issue Code</label>
+                <input
+                  id="issueCode"
+                  type="text"
+                  bind:value={newIssueCode}
+                  class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  placeholder="e.g., PROJ-123"
+                />
+              </div>
+
+              <!-- Phase Selection -->
+              <div class="space-y-1">
+                <label for="phase" class="text-sm font-medium">Project / Phase</label>
+                {#await phasesPromise}
+                  <input
+                    type="text"
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                    placeholder="Loading phases..."
+                    disabled
+                  />
+                {:then phases}
+                  <div class="relative">
+                    <Search
+                      class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <input
+                      id="phase"
+                      type="text"
+                      bind:value={phaseSearch}
+                      onfocus={() => (showPhaseDropdown = true)}
+                      onblur={() => setTimeout(() => (showPhaseDropdown = false), 200)}
+                      class="flex h-9 w-full rounded-md border border-input bg-background py-1 pr-3 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                      placeholder="Search project / phase..."
+                    />
+                    {#if showPhaseDropdown}
+                      <div
+                        class="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-popover shadow-lg"
                       >
-                        {#if confirmingDay === day.date}
-                          Confirming...
+                        {#each getFilteredPhases(phases, phaseSearch) as phase}
+                          <button
+                            type="button"
+                            class="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                            onmousedown={() => selectPhase(phase)}
+                          >
+                            {phase.fullName}
+                          </button>
                         {:else}
-                          <Check class="mr-1 h-4 w-4" />
-                          Confirm Day
-                        {/if}
-                      </Button>
+                          <div class="text-muted-foreground px-3 py-2 text-sm">No phases found</div>
+                        {/each}
+                      </div>
                     {/if}
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div class="divide-y divide-border">
-                  {#each day.entries as entry}
-                    <div class="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                      <div class="flex-1">
-                        <div class="flex items-center gap-2">
-                          <span class="font-mono text-sm">
-                            {formatTime(entry.startTime)}
-                            {#if entry.endTime}
-                              - {formatTime(entry.endTime)}
-                            {:else}
-                              <span class="text-muted-foreground">ongoing</span>
-                            {/if}
-                          </span>
-                          {#if entry.status === "draft"}
-                            <span
-                              class="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
-                            >
-                              Draft
-                            </span>
-                          {/if}
-                        </div>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                          {entry.description || "No description"}
-                        </p>
-                        {#if entry.phase}
-                          <p class="mt-0.5 text-xs text-muted-foreground">
-                            {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry
-                              .phase.name}
-                          </p>
-                        {/if}
-                      </div>
-                      {#if entry.status === "draft"}
-                        <div class="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onclick={() => goto(`/entry/${entry.id}`)}
-                          >
-                            <Edit class="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onclick={() => handleDeleteEntry(entry.id)}
-                            disabled={deletingEntry === entry.id}
-                          >
-                            <Trash2 class="h-4 w-4" />
-                          </Button>
-                        </div>
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
-              </CardContent>
-            </Card>
-          {/each}
+                  {#if newPhaseId && !showPhaseDropdown}
+                    <p class="text-xs text-muted-foreground">
+                      Selected: {getSelectedPhaseName(phases, newPhaseId)}
+                    </p>
+                  {/if}
+                {/await}
+              </div>
+
+              <!-- Worktype Selection -->
+              <div class="space-y-1">
+                <label for="worktype" class="text-sm font-medium">Work Type</label>
+                {#await worktypesPromise}
+                  <select
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                    disabled
+                  >
+                    <option>Loading...</option>
+                  </select>
+                {:then worktypes}
+                  <select
+                    id="worktype"
+                    bind:value={newWorktypeId}
+                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                  >
+                    <option value={null}>Select work type...</option>
+                    {#each worktypes as wt}
+                      <option value={wt.id}>{wt.name}</option>
+                    {/each}
+                  </select>
+                {/await}
+              </div>
+
+              <!-- Submit -->
+              <div class="flex justify-end gap-2">
+                <Button type="button" variant="outline" size="sm" onclick={resetNewEntryForm}>
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={isSubmitting}>
+                  {#if isSubmitting}
+                    <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  {:else}
+                    <Save class="mr-2 h-4 w-4" />
+                    Save
+                  {/if}
+                </Button>
+              </div>
+            </form>
+          </div>
+        {:else}
+          <!-- Add Entry Button -->
+          <div class="border-t border-border pt-4 mt-4">
+            <Button
+              variant="outline"
+              class="w-full"
+              onclick={() => (showNewEntryForm = true)}
+            >
+              <Plus class="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+          </div>
+        {/if}
+      {:catch err}
+        <div class="flex flex-col items-center justify-center py-8">
+          <AlertCircle class="mb-2 h-8 w-8 text-destructive" />
+          <p class="text-sm text-destructive">Failed to load entries</p>
         </div>
-      {/if}
-    {:catch error}
-      <Card>
-        <CardContent class="flex flex-col items-center justify-center py-12">
-          <AlertCircle class="mb-4 h-12 w-12 text-destructive" />
-          <p class="mb-2 text-destructive">Failed to load entries</p>
-          <p class="text-sm text-muted-foreground">{error.message}</p>
-        </CardContent>
-      </Card>
-    {/await}
+      {/await}
+    </CardContent>
+  </Card>
 </div>
