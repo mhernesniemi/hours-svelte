@@ -115,6 +115,12 @@
     error = "";
   }
 
+  async function handleAddEntry() {
+    showNewEntryForm = true;
+    await tick();
+    phaseDropdownOpen = true;
+  }
+
   function getFilteredPhases(phases: Awaited<typeof phasesPromise>, search: string) {
     if (!search) return phases.slice(0, 20);
     const lower = search.toLowerCase();
@@ -539,8 +545,8 @@
         {:else}
           <!-- Add Entry Button -->
           <div class="mt-4 border-t border-border pt-4">
-            <Button variant="outline" class="w-full" onclick={() => (showNewEntryForm = true)}>
-              <Plus class="mr-2 h-4 w-4" />
+            <Button variant="outline" class="w-full" onclick={handleAddEntry}>
+              <Plus class="h-4 w-4" />
               Add Entry
             </Button>
           </div>
