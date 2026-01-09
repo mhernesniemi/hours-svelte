@@ -44,6 +44,7 @@
     subWeeks,
     addDays,
     getISOWeek,
+    getISOWeekYear,
     isToday,
     isSameDay,
     isFuture,
@@ -60,8 +61,13 @@
 
   // Derived week info
   let weekNumber = $derived(getISOWeek(currentWeekStart));
-  let year = $derived(currentWeekStart.getFullYear());
-  let currentYear = $derived(new Date().getFullYear());
+  let year = $derived(getISOWeekYear(currentWeekStart));
+  let currentYear = $derived(getISOWeekYear(new Date()));
+
+  // Check if viewing current or future week (disable next navigation)
+  let isCurrentOrFutureWeek = $derived(
+    currentWeekStart >= startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
 
   // Generate weekdays for the current week
   let weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i)));
@@ -288,7 +294,11 @@
             <p class="text-muted-foreground">({year})</p>
           {/if}
         </div>
-        <button class="rounded-md p-2 hover:bg-accent" onclick={() => navigateWeek("next")}>
+        <button
+          class="rounded-md p-2 hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+          onclick={() => navigateWeek("next")}
+          disabled={isCurrentOrFutureWeek}
+        >
           <ChevronRight class="h-4 w-4" />
         </button>
       </div>
