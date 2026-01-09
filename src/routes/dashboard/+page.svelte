@@ -264,6 +264,16 @@
     }
   }
 
+  function handleKeyDown(e: KeyboardEvent) {
+    // Cmd+S (Mac) or Ctrl+S (Windows/Linux) to save
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault(); // Prevent browser's "Save Page" dialog
+      if (showNewEntryForm && !isSubmitting) {
+        handleCreateEntry(e);
+      }
+    }
+  }
+
   function formatTime(date: Date | string): string {
     const d = typeof date === "string" ? new Date(date) : date;
     return format(d, "HH:mm");
@@ -281,6 +291,8 @@
 <svelte:head>
   <title>Hours - Inside</title>
 </svelte:head>
+
+<svelte:document onkeydown={handleKeyDown} />
 
 <div class="mx-auto max-w-5xl p-4">
   <!-- Week Navigation Header -->
