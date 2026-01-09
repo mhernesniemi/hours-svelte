@@ -499,7 +499,7 @@
 
               <!-- Row 1: Phase Selection (full width) -->
               <div class="space-y-1">
-                <Label for="phase-combobox">Project / Phase</Label>
+                <Label for="phase-combobox">Project</Label>
                 {#await phasesPromise}
                   <Button variant="outline" class="w-full justify-between" disabled>
                     Loading phases...
@@ -520,7 +520,7 @@
                           <span class="truncate">
                             {newPhaseId
                               ? getSelectedPhaseName(phases, newPhaseId)
-                              : "Select project / phase..."}
+                              : "Select project..."}
                           </span>
                           <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -528,10 +528,7 @@
                     </Popover.Trigger>
                     <Popover.Content class="w-(--bits-popover-anchor-width) p-0">
                       <Command.Root shouldFilter={false}>
-                        <Command.Input
-                          placeholder="Search project / phase..."
-                          bind:value={phaseSearch}
-                        />
+                        <Command.Input placeholder="Search" bind:value={phaseSearch} />
                         <Command.List>
                           <Command.Empty>No phases found.</Command.Empty>
                           <Command.Group>
@@ -652,7 +649,7 @@
               </div>
             </form>
           </div>
-        {:else}
+        {:else if !dayData.allConfirmed}
           <!-- Add Entry Button -->
           <div class="mt-4 border-t border-border pt-4">
             <Button variant="outline" class="w-full" onclick={handleAddEntry}>
