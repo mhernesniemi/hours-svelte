@@ -89,6 +89,7 @@ class VismaClient {
 
 		// If API key is configured, use it directly
 		if (this.apiKey) {
+			console.log("[Visma] Using API key for authentication");
 			return this.apiKey;
 		}
 
@@ -96,6 +97,8 @@ class VismaClient {
 		if (!this.clientId || !this.clientSecret) {
 			throw new Error("Visma API credentials not configured");
 		}
+
+		console.log("[Visma] Requesting new OAuth token...");
 
 		// Visma Severa expects client_Id and client_Secret in request body (note the casing!)
 		// Also need to request scopes explicitly
@@ -128,13 +131,17 @@ class VismaClient {
 
 		if (!response.ok) {
 			const errorBody = await response.text();
+			console.error("[Visma] OAuth error:", response.status, errorBody);
 			throw new Error(`Visma OAuth error ${response.status}: ${errorBody}`);
 		}
 
 		const data = await response.json();
 		this.accessToken = data.access_token;
-		this.tokenExpiresAt = new Date(Date.now() + (data.expires_in - 60) * 1000);
+		// Default to 1 hour if expires_in is not provided or is 0
+		const expiresIn = data.expires_in || 3600;
+		this.tokenExpiresAt = new Date(Date.now() + (expiresIn - 60) * 1000);
 
+		console.log(`[Visma] OAuth token obtained, expires in ${expiresIn}s`);
 		return this.accessToken!;
 	}
 
@@ -159,13 +166,16 @@ class VismaClient {
 	}
 
 	/**
-	 * Paginated fetch helper
+	 * Paginated fetch helper - uses 500 items per page for efficiency
 	 */
 	private async fetchAll<T>(endpoint: string, params: Record<string, string> = {}): Promise<T[]> {
 		const allItems: T[] = [];
 		let firstRow = 0;
-		const rowCount = 100;
+		const rowCount = 500; // Increased from 100 for faster fetching
 		let hasMore = true;
+		let pageCount = 0;
+
+		console.log(`[Visma] Starting paginated fetch for ${endpoint}`);
 
 		while (hasMore) {
 			const queryParams = new URLSearchParams({
@@ -179,8 +189,12 @@ class VismaClient {
 			allItems.push(...response);
 			hasMore = response.length === rowCount;
 			firstRow += rowCount;
+			pageCount++;
+
+			console.log(`[Visma] Page ${pageCount}: ${allItems.length} items total`);
 		}
 
+		console.log(`[Visma] Completed ${endpoint}: ${allItems.length} total items`);
 		return allItems;
 	}
 

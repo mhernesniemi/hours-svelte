@@ -67,7 +67,9 @@ export const importCustomers = command(EmptySchema, async () => {
 		.returning();
 
 	try {
+		console.log("[ImportCustomers] Starting Visma customer fetch...");
 		const vismaCustomers = await vismaClient.getCustomers();
+		console.log(`[ImportCustomers] Received ${vismaCustomers.length} customers from Visma`);
 		let processed = 0;
 
 		for (const vc of vismaCustomers) {
@@ -135,17 +137,30 @@ export const importProjects = command(EmptySchema, async () => {
 		const vismaProjects = await vismaClient.getProjects();
 		let processed = 0;
 
-		// Get customer mapping
+		// Get customer mapping from database
 		const customerMap = new Map<string, number>();
 		const allCustomers = await db.select().from(customers);
 		for (const c of allCustomers) {
 			if (c.vismaGuid) customerMap.set(c.vismaGuid, c.id);
 		}
 
+		// Log customer count for debugging
+		console.log(`Found ${customerMap.size} customers in database for project mapping`);
+
 		for (const vp of vismaProjects) {
-			const customerId = customerMap.get(vp.customerGuid);
+			// Use customer.guid from the nested customer object (Visma API v1.0 format)
+			const customerGuid = vp.customer?.guid;
+
+			if (!customerGuid) {
+				console.log(`Skipping project ${vp.name} - no customer assigned`);
+				continue;
+			}
+
+			const customerId = customerMap.get(customerGuid);
 			if (!customerId) {
-				console.log(`Skipping project ${vp.name} - customer not found: ${vp.customerGuid}`);
+				console.log(
+					`Skipping project ${vp.name} - customer not in DB: ${vp.customer?.name} (${customerGuid})`
+				);
 				continue;
 			}
 
