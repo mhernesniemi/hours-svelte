@@ -17,6 +17,7 @@
   import * as Command from "$lib/components/ui/command";
   import * as Popover from "$lib/components/ui/popover";
   import * as Select from "$lib/components/ui/select";
+  import * as Tabs from "$lib/components/ui/tabs";
   import { TimeInput } from "$lib/components/ui/time-input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
@@ -296,23 +297,29 @@
     </div>
 
     <!-- Weekday Tabs -->
-    <div class="grid grid-cols-7 gap-1">
-      {#each weekDays as day}
-        <button
-          type="button"
-          onclick={() => selectDay(day)}
-          class="flex flex-col items-center rounded-lg p-2 transition-colors
-            {isSameDay(day, selectedDate)
-            ? 'bg-primary text-primary-foreground'
-            : isToday(day)
-              ? 'bg-accent text-accent-foreground'
-              : 'hover:bg-accent'}"
-        >
-          <span class="text-xs font-medium">{formatWeekday(day)}</span>
-          <span class="text-lg font-bold">{formatDayNumber(day)}</span>
-        </button>
-      {/each}
-    </div>
+    <Tabs.Root
+      value={format(selectedDate, "yyyy-MM-dd")}
+      onValueChange={(val) => {
+        if (val) selectDay(new Date(val));
+      }}
+    >
+      <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
+        {#each weekDays as day}
+          <Tabs.Trigger
+            value={format(day, "yyyy-MM-dd")}
+            class={cn(
+              "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
+              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
+              "data-[state=inactive]:hover:bg-accent",
+              isToday(day) && !isSameDay(day, selectedDate) && "bg-accent text-accent-foreground"
+            )}
+          >
+            <span class="text-xs font-medium">{formatWeekday(day)}</span>
+            <span class="text-lg font-bold">{formatDayNumber(day)}</span>
+          </Tabs.Trigger>
+        {/each}
+      </Tabs.List>
+    </Tabs.Root>
   </div>
 
   {#if error}
