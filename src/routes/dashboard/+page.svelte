@@ -286,6 +286,23 @@
   function formatDayNumber(date: Date): string {
     return format(date, "d");
   }
+
+  function formatDuration(startTime: Date | string, endTime: Date | string): string {
+    const start = typeof startTime === "string" ? new Date(startTime) : startTime;
+    const end = typeof endTime === "string" ? new Date(endTime) : endTime;
+    const diffMs = end.getTime() - start.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+
+    if (hours > 0 && mins > 0) {
+      return `${hours}h ${mins}m`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    } else {
+      return `${mins}m`;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -405,26 +422,34 @@
         {#if dayData.entries.length > 0}
           <div class="mb-4 divide-y divide-border">
             {#each dayData.entries as entry}
-              <div class="flex items-center justify-between py-3 first:pt-0">
-                <div class="flex-1">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-sm">
-                      {formatTime(entry.startTime)}
-                      {#if entry.endTime}
-                        - {formatTime(entry.endTime)}
-                      {:else}
-                        <span class="text-muted-foreground">ongoing</span>
-                      {/if}
-                    </span>
-                    {#if entry.status === "draft"}
-                      <span
-                        class="rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
-                      >
-                        Draft
-                      </span>
+              <div class="flex items-start justify-between gap-12 py-3 first:pt-0">
+                <!-- Time Column -->
+                <div class="w-28 shrink-0">
+                  <div class="font-mono text-sm font-medium">
+                    {formatTime(entry.startTime)}
+                    {#if entry.endTime}
+                      <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
+                    {:else}
+                      <span class="text-muted-foreground"> ongoing</span>
                     {/if}
                   </div>
-                  <p class="mt-1 text-sm text-muted-foreground">
+                  {#if entry.endTime}
+                    <div class="mt-0.5 font-mono text-xs text-muted-foreground">
+                      {formatDuration(entry.startTime, entry.endTime)}
+                    </div>
+                  {/if}
+                  {#if entry.status === "draft"}
+                    <span
+                      class="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
+                    >
+                      Draft
+                    </span>
+                  {/if}
+                </div>
+
+                <!-- Content Column -->
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-medium text-primary">
                     {entry.description || "No description"}
                   </p>
                   {#if entry.phase}
@@ -434,8 +459,10 @@
                     </p>
                   {/if}
                 </div>
+
+                <!-- Actions -->
                 {#if entry.status === "draft"}
-                  <div class="flex gap-1">
+                  <div class="flex shrink-0 gap-1">
                     <Button variant="ghost" size="icon" onclick={() => goto(`/entry/${entry.id}`)}>
                       <Edit class="h-4 w-4" />
                     </Button>
