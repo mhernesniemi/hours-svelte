@@ -1,7 +1,7 @@
 import { env } from "$env/dynamic/private";
 
-// Base URL for Visma Severa REST API
-const VISMA_BASE_URL = "https://api.severa.visma.com/rest-api/v1.0";
+// Base URL for Visma Severa REST API (default: production, use VISMA_BASE_URL env var for staging)
+const VISMA_BASE_URL = env.VISMA_BASE_URL || "https://api.severa.visma.com/rest-api/v1.0";
 
 // Type definitions for Visma API responses
 export interface VismaUser {
@@ -93,6 +93,22 @@ class VismaClient {
 			throw new Error("Visma API credentials not configured");
 		}
 
+		// Visma Severa expects client_Id and client_Secret in request body (note the casing!)
+		// Also need to request scopes explicitly
+		const scopes = [
+			"users:read",
+			"customers:read",
+			"projects:read",
+			"projects:write",
+			"activities:read",
+			"activities:write",
+			"hours:read",
+			"hours:write",
+			"hours:delete",
+			"settings:read",
+			"organization:read"
+		].join(" ");
+
 		const response = await fetch(`${VISMA_BASE_URL}/token`, {
 			method: "POST",
 			headers: {
@@ -100,14 +116,15 @@ class VismaClient {
 			},
 			body: new URLSearchParams({
 				grant_type: "client_credentials",
-				client_id: this.clientId,
-				client_secret: this.clientSecret,
-				scope: "customers:read projects:read phases:read worktypes:read users:read workhours:read workhours:write"
+				client_Id: this.clientId,
+				client_Secret: this.clientSecret,
+				scope: scopes
 			})
 		});
 
 		if (!response.ok) {
-			throw new Error(`Visma OAuth error: ${response.status}`);
+			const errorBody = await response.text();
+			throw new Error(`Visma OAuth error ${response.status}: ${errorBody}`);
 		}
 
 		const data = await response.json();
