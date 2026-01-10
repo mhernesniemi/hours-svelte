@@ -382,12 +382,17 @@
                 "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
                 "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
                 "data-[state=inactive]:hover:bg-accent",
-                isToday(day) && !isSameDay(day, selectedDate) && "bg-accent text-accent-foreground",
-                isConfirmed && "bg-green-100 data-[state=active]:bg-green-600 dark:bg-green-900/30"
+                isToday(day) &&
+                  !isSameDay(day, selectedDate) &&
+                  "border border-dashed border-primary/30"
               )}
             >
-              <span class="text-xs font-medium">{formatWeekday(day)}</span>
-              <span class="text-lg font-bold">{formatDayNumber(day)}</span>
+              <span class={cn("text-xs font-medium", isConfirmed && "text-green-500")}
+                >{formatWeekday(day)}</span
+              >
+              <span class={cn("text-lg font-bold", isConfirmed && "text-green-500")}
+                >{formatDayNumber(day)}</span
+              >
             </Tabs.Trigger>
           {/each}
         </Tabs.List>
