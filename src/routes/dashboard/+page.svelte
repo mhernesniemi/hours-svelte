@@ -8,8 +8,10 @@
     getPhasesWithHierarchy,
     getWorktypes
   } from "$lib/remote";
-  import { goto } from "$app/navigation";
+  import { goto, replaceState } from "$app/navigation";
+  import { page } from "$app/state";
   import { browser } from "$app/environment";
+  import { parseISO, isValid } from "date-fns";
 
   const DEFAULT_WORKTYPE_KEY = "inside-default-worktype";
   import { tick, untrack } from "svelte";
@@ -53,12 +55,33 @@
     startOfDay
   } from "date-fns";
 
-  // User comes from +page.server.ts load function
-  let { data } = $props();
+  // Parse initial date from URL or use today
+  function getInitialDate(): Date {
+    const dateParam = page.url.searchParams.get("date");
+    if (dateParam) {
+      const parsed = parseISO(dateParam);
+      if (isValid(parsed)) {
+        return parsed;
+      }
+    }
+    return new Date();
+  }
+
+  const initialDate = getInitialDate();
 
   // Current week state - start of week (Monday)
-  let currentWeekStart = $state(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  let selectedDate = $state(new Date());
+  let currentWeekStart = $state(startOfWeek(initialDate, { weekStartsOn: 1 }));
+  let selectedDate = $state(initialDate);
+
+  // Update URL when date changes
+  $effect(() => {
+    if (browser) {
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
+      const url = new URL(page.url);
+      url.searchParams.set("date", dateStr);
+      replaceState(url, {});
+    }
+  });
 
   // Derived week info
   let weekNumber = $derived(getISOWeek(currentWeekStart));
