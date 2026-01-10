@@ -9,47 +9,54 @@
     getPhasesWithHierarchy,
     getWorktypes
   } from "$lib/remote";
-  import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
-  import { browser } from "$app/environment";
   import { untrack } from "svelte";
-  import { format, startOfWeek, addWeeks, subWeeks, addDays, isSameDay } from "date-fns";
 
   import { Card, CardContent } from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
+  import AsyncBoundary from "$lib/components/AsyncBoundary.svelte";
   import { AlertCircle, Clock, Plus, Copy } from "@lucide/svelte";
 
-  import { WeekNavigator, DayHeader, EntryItem, EntryForm } from "./components";
+  import { WeekNavigator, DayHeader, EntryList, EntryItem, EntryForm } from "./components";
   import {
-    getInitialDate,
     parseTimeToDate,
     getDefaultWorktypeId,
-    saveDefaultWorktypeId
+    saveDefaultWorktypeId,
+    // Store
+    initializeFromUrl,
+    syncUrlWithDate,
+    getSelectedDate,
+    getCurrentWeekStart,
+    getEditingEntryId,
+    getShowNewEntryForm,
+    getError,
+    selectDay,
+    navigateWeek,
+    startEditing,
+    startCreating,
+    resetForm,
+    setError,
+    clearError
   } from "$lib/dashboard";
 
-  // Initialize dates from URL
-  const initialDate = getInitialDate(page.url.searchParams);
+  // Initialize store from URL
+  initializeFromUrl(page.url.searchParams);
 
-  // Week and date state
-  let currentWeekStart = $state(startOfWeek(initialDate, { weekStartsOn: 1 }));
-  let selectedDate = $state(initialDate);
+  // Reactive getters from store
+  let selectedDate = $derived(getSelectedDate());
+  let currentWeekStart = $derived(getCurrentWeekStart());
+  let editingEntryId = $derived(getEditingEntryId());
+  let showNewEntryForm = $derived(getShowNewEntryForm());
+  let error = $derived(getError());
 
-  // UI state
-  let showNewEntryForm = $state(false);
-  let editingEntryId = $state<number | null>(null);
+  // UI state (local to page)
   let confirmingDay = $state(false);
   let deletingEntryId = $state<number | null>(null);
   let isSubmitting = $state(false);
-  let error = $state("");
 
-  // Update URL when date changes
+  // Sync URL with date changes
   $effect(() => {
-    if (browser) {
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      const url = new URL(page.url);
-      url.searchParams.set("date", dateStr);
-      replaceState(url, {});
-    }
+    syncUrlWithDate(page.url);
   });
 
   // Data fetching
@@ -84,43 +91,16 @@
     });
   }
 
-  // Reset all form state
-  function resetForm() {
-    showNewEntryForm = false;
-    editingEntryId = null;
-    error = "";
-  }
-
-  // Navigation handlers
+  // Navigation handlers (delegate to store with view transitions)
   function handleNavigateWeek(direction: "prev" | "next") {
-    withViewTransition(() => {
-      const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
-      currentWeekStart =
-        direction === "prev" ? subWeeks(currentWeekStart, 1) : addWeeks(currentWeekStart, 1);
-      const dayOffset = weekDays.findIndex((d) => isSameDay(d, selectedDate));
-      selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
-    });
+    withViewTransition(() => navigateWeek(direction));
   }
 
   function handleSelectDay(day: Date) {
-    withViewTransition(() => {
-      selectedDate = day;
-      resetForm();
-    });
+    withViewTransition(() => selectDay(day));
   }
 
   // Entry handlers
-  function handleAddEntry() {
-    showNewEntryForm = true;
-    editingEntryId = null;
-  }
-
-  function handleStartEditing(entryId: number) {
-    showNewEntryForm = false;
-    editingEntryId = entryId;
-    error = "";
-  }
-
   async function handleCreateEntry(data: {
     startTime: string;
     endTime: string;
@@ -128,7 +108,7 @@
     phaseId: number | null;
     worktypeId: number | null;
   }) {
-    error = "";
+    clearError();
     isSubmitting = true;
 
     try {
@@ -149,10 +129,10 @@
         resetForm();
         refreshEntries();
       } else {
-        error = result.error || "Failed to create entry";
+        setError(result.error || "Failed to create entry");
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to create entry";
+      setError(err instanceof Error ? err.message : "Failed to create entry");
     } finally {
       isSubmitting = false;
     }
@@ -167,7 +147,7 @@
   }) {
     if (!editingEntryId) return;
 
-    error = "";
+    clearError();
     isSubmitting = true;
 
     try {
@@ -187,46 +167,46 @@
         resetForm();
         refreshEntries();
       } else {
-        error = result.error || "Failed to update entry";
+        setError(result.error || "Failed to update entry");
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to update entry";
+      setError(err instanceof Error ? err.message : "Failed to update entry");
     } finally {
       isSubmitting = false;
     }
   }
 
   async function handleDeleteEntry(entryId: number) {
-    error = "";
+    clearError();
     deletingEntryId = entryId;
 
     try {
       const result = await deleteEntry({ entryId });
       if (!result.success) {
-        error = result.error || "Failed to delete entry";
+        setError(result.error || "Failed to delete entry");
       } else {
         refreshEntries();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to delete entry";
+      setError(err instanceof Error ? err.message : "Failed to delete entry");
     } finally {
       deletingEntryId = null;
     }
   }
 
   async function handleConfirmDay() {
-    error = "";
+    clearError();
     confirmingDay = true;
 
     try {
       const result = await confirmDayEntries({ date: selectedDate });
       if (!result.success) {
-        error = result.error || "Failed to confirm day";
+        setError(result.error || "Failed to confirm day");
       } else {
         refreshEntries();
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : "Failed to confirm day";
+      setError(err instanceof Error ? err.message : "Failed to confirm day");
     } finally {
       confirmingDay = false;
     }
@@ -239,15 +219,21 @@
 
 <div class="mx-auto max-w-5xl p-4">
   <!-- Week Navigation -->
-  {#await weekStatusPromise then weekStatus}
-    <WeekNavigator
-      {currentWeekStart}
-      {selectedDate}
-      confirmedDays={weekStatus.confirmedDays}
-      onnavigateweek={handleNavigateWeek}
-      onselectday={handleSelectDay}
-    />
-  {/await}
+  <AsyncBoundary promise={weekStatusPromise}>
+    {#snippet loading()}
+      <div class="mb-6 h-24"></div>
+    {/snippet}
+
+    {#snippet children(weekStatus)}
+      <WeekNavigator
+        {currentWeekStart}
+        {selectedDate}
+        confirmedDays={weekStatus.confirmedDays}
+        onnavigateweek={handleNavigateWeek}
+        onselectday={handleSelectDay}
+      />
+    {/snippet}
+  </AsyncBoundary>
 
   <!-- Error Banner -->
   {#if error}
@@ -261,91 +247,95 @@
 
   <!-- Day Content Card -->
   <Card>
-    {#await entriesPromise}
-      <div class="flex h-48 items-center justify-center"></div>
-    {:then dayData}
-      <DayHeader
-        {selectedDate}
-        totalFormatted={dayData.totalFormatted}
-        hasUnconfirmed={dayData.hasUnconfirmed}
-        allConfirmed={dayData.allConfirmed}
-        {confirmingDay}
-        onconfirmday={handleConfirmDay}
-      />
+    <AsyncBoundary promise={entriesPromise}>
+      {#snippet loading()}
+        <div class="flex h-48 items-center justify-center"></div>
+      {/snippet}
 
-      <CardContent>
-        <!-- Entries List -->
-        {#if dayData.entries.length > 0}
-          <div class="mb-4 divide-y divide-border">
-            {#each dayData.entries as entry (entry.id)}
+      {#snippet children(dayData)}
+        <DayHeader
+          {selectedDate}
+          totalFormatted={dayData.totalFormatted}
+          hasUnconfirmed={dayData.hasUnconfirmed}
+          allConfirmed={dayData.allConfirmed}
+          {confirmingDay}
+          onconfirmday={handleConfirmDay}
+        />
+
+        <CardContent>
+          <!-- Entries List with snippet-based rendering -->
+          <EntryList entries={dayData.entries}>
+            {#snippet children(entry)}
               {#if editingEntryId === entry.id}
                 <!-- Inline Edit Form -->
                 <div class="py-3 first:pt-0">
-                  {#await Promise.all([phasesPromise, worktypesPromise]) then [phases, worktypes]}
-                    <EntryForm
-                      mode="edit"
-                      {entry}
-                      {phases}
-                      {worktypes}
-                      {isSubmitting}
-                      onsubmit={handleUpdateEntry}
-                      oncancel={resetForm}
-                    />
-                  {/await}
+                  <EntryForm
+                    mode="edit"
+                    {entry}
+                    {phasesPromise}
+                    {worktypesPromise}
+                    {isSubmitting}
+                    onsubmit={handleUpdateEntry}
+                    oncancel={resetForm}
+                  />
                 </div>
               {:else}
                 <EntryItem
                   {entry}
                   isDeleting={deletingEntryId === entry.id}
-                  onedit={() => handleStartEditing(entry.id)}
+                  onedit={() => startEditing(entry.id)}
                   ondelete={() => handleDeleteEntry(entry.id)}
                 />
               {/if}
-            {/each}
-          </div>
-        {:else if !showNewEntryForm && !editingEntryId}
-          <div class="flex flex-col items-center justify-center py-8 text-muted-foreground">
-            <Clock class="mb-2 h-8 w-8" />
-            <p class="text-sm">No entries for this day</p>
-            <button
-              class="mt-6 flex items-center gap-2 rounded-md border border-dashed border-primary/30 px-2 py-1 text-xs text-muted-foreground hover:text-primary"
-            >
-              <Copy class="h-3 w-3" />
-              Copy Previous Day
-            </button>
-          </div>
-        {/if}
+            {/snippet}
 
-        <!-- New Entry Form -->
-        {#if showNewEntryForm}
-          <div class="mt-4 border-t border-border pt-4">
-            {#await Promise.all([phasesPromise, worktypesPromise]) then [phases, worktypes]}
+            {#snippet empty()}
+              {#if !showNewEntryForm && !editingEntryId}
+                <div class="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Clock class="mb-2 h-8 w-8" />
+                  <p class="text-sm">No entries for this day</p>
+                  <button
+                    class="mt-6 flex items-center gap-2 rounded-md border border-dashed border-primary/30 px-2 py-1 text-xs text-muted-foreground hover:text-primary"
+                  >
+                    <Copy class="h-3 w-3" />
+                    Copy Previous Day
+                  </button>
+                </div>
+              {/if}
+            {/snippet}
+          </EntryList>
+
+          <!-- New Entry Form -->
+          {#if showNewEntryForm}
+            <div class="mt-4 border-t border-border pt-4">
               <EntryForm
                 mode="create"
-                {phases}
-                {worktypes}
+                {phasesPromise}
+                {worktypesPromise}
                 defaultWorktypeId={getDefaultWorktypeId()}
                 {isSubmitting}
                 onsubmit={handleCreateEntry}
                 oncancel={resetForm}
               />
-            {/await}
-          </div>
-        {:else if !dayData.allConfirmed}
-          <!-- Add Entry Button -->
-          <div class="mt-4 border-t border-border pt-4">
-            <Button variant="outline" class="w-full" onclick={handleAddEntry}>
-              <Plus class="h-4 w-4" />
-              Add Entry
-            </Button>
-          </div>
-        {/if}
-      </CardContent>
-    {:catch}
-      <div class="flex flex-col items-center justify-center py-8">
-        <AlertCircle class="mb-2 h-8 w-8 text-destructive" />
-        <p class="text-sm text-destructive">Failed to load entries</p>
-      </div>
-    {/await}
+            </div>
+          {:else if !dayData.allConfirmed}
+            <!-- Add Entry Button -->
+            <div class="mt-4 border-t border-border pt-4">
+              <Button variant="outline" class="w-full" onclick={startCreating}>
+                <Plus class="h-4 w-4" />
+                Add Entry
+              </Button>
+            </div>
+          {/if}
+        </CardContent>
+      {/snippet}
+
+      {#snippet error()}
+        <div class="flex flex-col items-center justify-center py-8">
+          <AlertCircle class="mb-2 h-8 w-8 text-destructive" />
+          <p class="text-sm text-destructive">Failed to load entries</p>
+        </div>
+      {/snippet}
+    </AsyncBoundary>
   </Card>
 </div>

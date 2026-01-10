@@ -33,8 +33,8 @@
   interface Props {
     mode: "create" | "edit";
     entry?: Entry | null;
-    phases: Phase[];
-    worktypes: Worktype[];
+    phasesPromise: Promise<Phase[]>;
+    worktypesPromise: Promise<Worktype[]>;
     defaultWorktypeId?: number | null;
     isSubmitting?: boolean;
     onsubmit: (data: {
@@ -50,8 +50,8 @@
   let {
     mode,
     entry = null,
-    phases,
-    worktypes,
+    phasesPromise,
+    worktypesPromise,
     defaultWorktypeId = null,
     isSubmitting = false,
     onsubmit,
@@ -110,13 +110,13 @@
     }
   });
 
-  function getFilteredPhases(search: string): Phase[] {
+  function getFilteredPhases(phases: Phase[], search: string): Phase[] {
     if (!search) return phases.slice(0, 20);
     const lower = search.toLowerCase();
     return phases.filter((p) => p.fullName.toLowerCase().includes(lower)).slice(0, 20);
   }
 
-  function getSelectedPhaseName(): string {
+  function getSelectedPhaseName(phases: Phase[]): string {
     if (!phaseId) return "";
     const phase = phases.find((p) => p.id === phaseId);
     return phase?.fullName || "";
@@ -160,131 +160,137 @@
 
 <svelte:document onkeydown={handleKeyDown} />
 
-<form onsubmit={handleSubmit} class="space-y-4">
-  <div class="mb-2 flex items-center justify-between">
-    <h3 class="font-medium">{mode === "create" ? "New Entry" : "Edit Entry"}</h3>
-    <Button type="button" variant="ghost" size="icon" onclick={oncancel}>
-      <X class="h-4 w-4" />
-    </Button>
+{#await Promise.all([phasesPromise, worktypesPromise])}
+  <div class="flex h-32 items-center justify-center">
+    <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
   </div>
+{:then [phases, worktypes]}
+  <form onsubmit={handleSubmit} class="space-y-4">
+    <div class="mb-2 flex items-center justify-between">
+      <h3 class="font-medium">{mode === "create" ? "New Entry" : "Edit Entry"}</h3>
+      <Button type="button" variant="ghost" size="icon" onclick={oncancel}>
+        <X class="h-4 w-4" />
+      </Button>
+    </div>
 
-  <!-- Phase Selection -->
-  <div class="space-y-1">
-    <Label for="phase-combobox">Project</Label>
-    <Popover.Root bind:open={phaseDropdownOpen}>
-      <Popover.Trigger bind:ref={phaseTriggerRef}>
-        {#snippet child({ props })}
-          <Button
-            {...props}
-            id="phase-combobox"
-            variant="outline"
-            class="w-full justify-between"
-            role="combobox"
-            aria-expanded={phaseDropdownOpen}
-          >
-            <span class="truncate">
-              {phaseId ? getSelectedPhaseName() : "Select project..."}
+    <!-- Phase Selection -->
+    <div class="space-y-1">
+      <Label for="phase-combobox">Project</Label>
+      <Popover.Root bind:open={phaseDropdownOpen}>
+        <Popover.Trigger bind:ref={phaseTriggerRef}>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              id="phase-combobox"
+              variant="outline"
+              class="w-full justify-between"
+              role="combobox"
+              aria-expanded={phaseDropdownOpen}
+            >
+              <span class="truncate">
+                {phaseId ? getSelectedPhaseName(phases) : "Select project..."}
+              </span>
+              <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          {/snippet}
+        </Popover.Trigger>
+        <Popover.Content class="w-(--bits-popover-anchor-width) p-0">
+          <Command.Root shouldFilter={false}>
+            <Command.Input placeholder="Search" bind:value={phaseSearch} />
+            <Command.List>
+              <Command.Empty>No phases found.</Command.Empty>
+              <Command.Group>
+                {#each getFilteredPhases(phases, phaseSearch) as phase (phase.id)}
+                  <Command.Item value={phase.fullName} onSelect={() => selectPhase(phase)}>
+                    <Check class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")} />
+                    {phase.fullName}
+                  </Command.Item>
+                {/each}
+              </Command.Group>
+            </Command.List>
+          </Command.Root>
+        </Popover.Content>
+      </Popover.Root>
+    </div>
+
+    <!-- Worktype + Times -->
+    <div class="grid grid-cols-4 gap-4">
+      <div class="col-span-2 space-y-1">
+        <Label for="worktype">Work Type</Label>
+        <Select.Root
+          type="single"
+          bind:open={worktypeDropdownOpen}
+          value={worktypeId ? String(worktypeId) : undefined}
+          onValueChange={(val) => {
+            worktypeId = val ? Number(val) : null;
+            if (val) {
+              tick().then(() => startTimeInputRef?.focus());
+            }
+          }}
+        >
+          <Select.Trigger id="worktype" class="w-full">
+            <span data-slot="select-value">
+              {#if worktypeId}
+                {worktypes.find((wt) => wt.id === worktypeId)?.name || "Select work type..."}
+              {:else}
+                Select work type...
+              {/if}
             </span>
-            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        {/snippet}
-      </Popover.Trigger>
-      <Popover.Content class="w-(--bits-popover-anchor-width) p-0">
-        <Command.Root shouldFilter={false}>
-          <Command.Input placeholder="Search" bind:value={phaseSearch} />
-          <Command.List>
-            <Command.Empty>No phases found.</Command.Empty>
-            <Command.Group>
-              {#each getFilteredPhases(phaseSearch) as phase (phase.id)}
-                <Command.Item value={phase.fullName} onSelect={() => selectPhase(phase)}>
-                  <Check class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")} />
-                  {phase.fullName}
-                </Command.Item>
-              {/each}
-            </Command.Group>
-          </Command.List>
-        </Command.Root>
-      </Popover.Content>
-    </Popover.Root>
-  </div>
+          </Select.Trigger>
+          <Select.Content>
+            {#each worktypes as wt}
+              <Select.Item value={String(wt.id)} label={wt.name} />
+            {/each}
+          </Select.Content>
+        </Select.Root>
+      </div>
 
-  <!-- Worktype + Times -->
-  <div class="grid grid-cols-4 gap-4">
-    <div class="col-span-2 space-y-1">
-      <Label for="worktype">Work Type</Label>
-      <Select.Root
-        type="single"
-        bind:open={worktypeDropdownOpen}
-        value={worktypeId ? String(worktypeId) : undefined}
-        onValueChange={(val) => {
-          worktypeId = val ? Number(val) : null;
-          if (val) {
-            tick().then(() => startTimeInputRef?.focus());
-          }
-        }}
-      >
-        <Select.Trigger id="worktype" class="w-full">
-          <span data-slot="select-value">
-            {#if worktypeId}
-              {worktypes.find((wt) => wt.id === worktypeId)?.name || "Select work type..."}
-            {:else}
-              Select work type...
-            {/if}
-          </span>
-        </Select.Trigger>
-        <Select.Content>
-          {#each worktypes as wt}
-            <Select.Item value={String(wt.id)} label={wt.name} />
-          {/each}
-        </Select.Content>
-      </Select.Root>
+      <div class="space-y-1">
+        <Label for="startTime">Start</Label>
+        <TimeInput
+          id="startTime"
+          bind:value={startTime}
+          required
+          bind:ref={startTimeInputRef}
+          oncomplete={() => endTimeInputRef?.focus()}
+        />
+      </div>
+
+      <div class="space-y-1">
+        <Label for="endTime">End</Label>
+        <TimeInput
+          id="endTime"
+          bind:value={endTime}
+          bind:ref={endTimeInputRef}
+          oncomplete={() => descriptionRef?.focus()}
+        />
+      </div>
     </div>
 
+    <!-- Description -->
     <div class="space-y-1">
-      <Label for="startTime">Start</Label>
-      <TimeInput
-        id="startTime"
-        bind:value={startTime}
-        required
-        bind:ref={startTimeInputRef}
-        oncomplete={() => endTimeInputRef?.focus()}
+      <Label for="description">Description</Label>
+      <Textarea
+        id="description"
+        bind:value={description}
+        bind:ref={descriptionRef}
+        rows={2}
+        placeholder="What did you work on?"
       />
     </div>
 
-    <div class="space-y-1">
-      <Label for="endTime">End</Label>
-      <TimeInput
-        id="endTime"
-        bind:value={endTime}
-        bind:ref={endTimeInputRef}
-        oncomplete={() => descriptionRef?.focus()}
-      />
+    <!-- Actions -->
+    <div class="flex justify-end gap-2">
+      <Button type="button" variant="outline" size="sm" onclick={oncancel}>Cancel</Button>
+      <Button type="submit" size="sm" disabled={isSubmitting}>
+        {#if isSubmitting}
+          <Loader2 class="h-4 w-4 animate-spin" />
+          Saving...
+        {:else}
+          <Save class="h-4 w-4" />
+          Save
+        {/if}
+      </Button>
     </div>
-  </div>
-
-  <!-- Description -->
-  <div class="space-y-1">
-    <Label for="description">Description</Label>
-    <Textarea
-      id="description"
-      bind:value={description}
-      bind:ref={descriptionRef}
-      rows={2}
-      placeholder="What did you work on?"
-    />
-  </div>
-
-  <!-- Actions -->
-  <div class="flex justify-end gap-2">
-    <Button type="button" variant="outline" size="sm" onclick={oncancel}>Cancel</Button>
-    <Button type="submit" size="sm" disabled={isSubmitting}>
-      {#if isSubmitting}
-        <Loader2 class="h-4 w-4 animate-spin" />
-        Saving...
-      {:else}
-        <Save class="h-4 w-4" />
-        Save
-      {/if}
-    </Button>
-  </div>
-</form>
+  </form>
+{/await}
