@@ -440,14 +440,22 @@
     <CardHeader class="pb-2">
       {#await entriesPromise then dayData}
         <div class="flex items-center justify-between">
-          <CardTitle class="flex items-center gap-1 text-lg">
+          <CardTitle class="flex items-center gap-3 text-lg">
             {format(selectedDate, "EEEE, MMMM d")}
 
             {#if dayData.hasUnconfirmed}
               <span
-                class="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground/70"
+                class="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground/70"
               >
                 Draft
+              </span>
+            {/if}
+            {#if dayData.allConfirmed}
+              <span
+                class="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400"
+              >
+                <Check class="h-3 w-3" />
+                Confirmed
               </span>
             {/if}
           </CardTitle>
@@ -456,14 +464,8 @@
               <Clock class="h-4 w-4 text-muted-foreground" />
               <span class="text-sm font-medium">{dayData.totalFormatted}</span>
             </div>
-            {#if dayData.allConfirmed}
-              <span
-                class="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400"
-              >
-                <Check class="h-3 w-3" />
-                Confirmed
-              </span>
-            {:else if dayData.hasUnconfirmed}
+
+            {#if dayData.hasUnconfirmed}
               <Button
                 size="sm"
                 variant="outline"
