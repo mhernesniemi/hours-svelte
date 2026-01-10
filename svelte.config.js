@@ -13,6 +13,10 @@ const config = {
 		}
 	},
 
+	vitePlugin: {
+		inspector: true
+	},
+
 	kit: {
 		adapter: adapter(),
 		experimental: {

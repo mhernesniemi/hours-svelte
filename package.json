@@ -58,6 +58,7 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.2",
+		"@sveltejs/vite-plugin-svelte-inspector": "^5.0.2",
 		"date-fns": "^4.1.0",
 		"date-fns-tz": "^3.2.0",
 		"ldapts": "^8.1.3",
