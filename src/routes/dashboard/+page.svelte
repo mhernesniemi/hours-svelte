@@ -432,7 +432,7 @@
             </div>
             {#if dayData.allConfirmed}
               <span
-                class="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+                class="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400"
               >
                 <Check class="h-3 w-3" />
                 Confirmed
@@ -490,7 +490,7 @@
                     {entry.description || "No description"}
                   </p>
                   {#if entry.phase}
-                    <p class="mt-0.5 text-xs text-muted-foreground">
+                    <p class="mt-2 text-xs text-muted-foreground">
                       {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase
                         .name}
                     </p>
