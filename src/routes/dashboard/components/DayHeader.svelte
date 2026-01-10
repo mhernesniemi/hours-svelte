@@ -2,7 +2,7 @@
   import { format } from "date-fns";
   import { Button } from "$lib/components/ui/button";
   import { CardHeader, CardTitle } from "$lib/components/ui/card";
-  import { Check, Clock, Loader2 } from "@lucide/svelte";
+  import { Check, Clock, Loader2, Send } from "@lucide/svelte";
 
   interface Props {
     selectedDate: Date;
@@ -56,7 +56,7 @@
             <Loader2 class="mr-1 h-4 w-4 animate-spin" />
             Confirming...
           {:else}
-            <Check class="mr-1 h-4 w-4" />
+            <Send class="mr-1 h-4 w-4" />
             Confirm Day
           {/if}
         </Button>

@@ -46,7 +46,7 @@
 <div class="flex min-h-screen items-center justify-center bg-background px-4">
   <Card class="w-full max-w-md">
     <CardHeader class="space-y-1 text-center">
-      <CardTitle class="text-2xl font-bold">Inside</CardTitle>
+      <CardTitle class="text-2xl font-bold text-[#ff3c1b]">Inside</CardTitle>
       <CardDescription>Time Tracking System</CardDescription>
     </CardHeader>
 
