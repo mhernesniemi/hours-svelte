@@ -265,13 +265,15 @@ export const importPhases = command(EmptySchema, async () => {
 					processed++;
 				}
 			} catch (error) {
-				console.error(`[ImportPhases] Error fetching phases for project ${projectGuid}:`, error);
+				console.error(
+					`[ImportPhases] Error fetching phases for project ${projectGuid}:`,
+					error
+				);
 				// Continue with next project
 			}
 		}
 
 		console.log(`[ImportPhases] Processed ${processed} phases from ${caseMap.size} projects`);
-
 
 		await db
 			.update(syncLogs)
