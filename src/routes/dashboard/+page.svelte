@@ -419,7 +419,7 @@
 
             {#if dayData.hasUnconfirmed}
               <span
-                class="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground"
+                class="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground/70"
               >
                 Draft
               </span>
