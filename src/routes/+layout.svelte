@@ -53,18 +53,17 @@
         <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div class="flex items-center gap-6">
             <a href="/" class="text-xl font-bold text-[#ff3c1b]">Inside</a>
+            {#if user.role === "admin"}
+              <nav class="flex items-center gap-1">
+                <a
+                  href="/dashboard"
+                  class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                  class:bg-accent={isActive("/dashboard")}
+                >
+                  <Clock class="h-4 w-4" />
+                  Hours
+                </a>
 
-            <nav class="flex items-center gap-1">
-              <a
-                href="/dashboard"
-                class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                class:bg-accent={isActive("/dashboard")}
-              >
-                <Clock class="h-4 w-4" />
-                Hours
-              </a>
-
-              {#if user.role === "admin"}
                 <a
                   href="/admin"
                   class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
@@ -73,8 +72,8 @@
                   <Settings class="h-4 w-4" />
                   Admin
                 </a>
-              {/if}
-            </nav>
+              </nav>
+            {/if}
           </div>
 
           <div class="flex items-center gap-4">
