@@ -414,7 +414,7 @@
     <CardHeader class="pb-2">
       {#await entriesPromise then dayData}
         <div class="flex items-center justify-between">
-          <CardTitle class="text-lg">
+          <CardTitle class="flex items-center gap-1 text-lg">
             {format(selectedDate, "EEEE, MMMM d")}
 
             {#if dayData.hasUnconfirmed}
