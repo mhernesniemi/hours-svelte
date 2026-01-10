@@ -2,7 +2,7 @@
   import "./layout.css";
   import favicon from "$lib/assets/favicon.svg";
   import { getCurrentUser, logout } from "$lib/remote";
-  import { goto } from "$app/navigation";
+  import { goto, onNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { Button } from "$lib/components/ui/button";
   import { Clock, Settings, LogOut, User } from "@lucide/svelte";
@@ -11,6 +11,18 @@
 
   // Get current user - this runs on the server via remote function
   const userPromise = getCurrentUser({});
+
+  // Enable view transitions on page navigation
+  onNavigate((navigation) => {
+    if (!document.startViewTransition) return;
+
+    return new Promise((resolve) => {
+      document.startViewTransition(async () => {
+        resolve();
+        await navigation.complete;
+      });
+    });
+  });
 
   async function handleLogout() {
     await logout({});

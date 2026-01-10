@@ -110,18 +110,31 @@
   let descriptionRef = $state<HTMLTextAreaElement>(null!);
   let isSubmitting = $state(false);
 
+  // Helper to run state changes with view transition
+  function withViewTransition(callback: () => void) {
+    if (!document.startViewTransition) {
+      callback();
+      return;
+    }
+    document.startViewTransition(callback);
+  }
+
   function navigateWeek(direction: "prev" | "next") {
-    currentWeekStart =
-      direction === "prev" ? subWeeks(currentWeekStart, 1) : addWeeks(currentWeekStart, 1);
-    // Select the same weekday in the new week
-    const dayOffset = weekDays.findIndex((d) => isSameDay(d, selectedDate));
-    selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
+    withViewTransition(() => {
+      currentWeekStart =
+        direction === "prev" ? subWeeks(currentWeekStart, 1) : addWeeks(currentWeekStart, 1);
+      // Select the same weekday in the new week
+      const dayOffset = weekDays.findIndex((d) => isSameDay(d, selectedDate));
+      selectedDate = addDays(currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
+    });
   }
 
   function selectDay(day: Date) {
-    selectedDate = day;
-    // Reset form when changing days
-    resetNewEntryForm();
+    withViewTransition(() => {
+      selectedDate = day;
+      // Reset form when changing days
+      resetNewEntryForm();
+    });
   }
 
   function getDefaultWorktypeId(): number | null {
