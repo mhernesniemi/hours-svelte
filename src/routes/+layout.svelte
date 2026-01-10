@@ -52,7 +52,7 @@
       <header class="sticky top-0 z-50 border-b border-border bg-card">
         <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div class="flex items-center gap-6">
-            <a href="/" class="text-xl font-semibold">Inside</a>
+            <a href="/" class="text-xl font-bold text-[#ff3c1b]">Inside</a>
 
             <nav class="flex items-center gap-1">
               <a
