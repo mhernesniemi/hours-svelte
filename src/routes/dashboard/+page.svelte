@@ -117,10 +117,12 @@
     return confirmedDays.includes(format(day, "yyyy-MM-dd"));
   }
 
-  // Helper to refresh entries after mutations
+  // Helper to refresh entries after mutations (with view transition)
   function refreshEntries() {
-    entriesPromise.refresh();
-    weekStatusPromise.refresh();
+    withViewTransition(() => {
+      entriesPromise.refresh();
+      weekStatusPromise.refresh();
+    });
   }
 
   // Load phases and worktypes for the form
