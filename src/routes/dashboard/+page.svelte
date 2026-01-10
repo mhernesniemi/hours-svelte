@@ -37,7 +37,8 @@
     Save,
     Loader2,
     X,
-    ChevronsUpDown
+    ChevronsUpDown,
+    Copy
   } from "@lucide/svelte";
   import {
     format,
@@ -545,6 +546,12 @@
           <div class="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Clock class="mb-2 h-8 w-8" />
             <p class="text-sm">No entries for this day</p>
+            <button
+              class="mt-6 flex items-center gap-2 rounded-md border border-dashed border-primary/30 px-2 py-1 text-xs text-muted-foreground hover:text-primary"
+            >
+              <Copy class="h-3 w-3" />
+              Copy Previous Day
+            </button>
           </div>
         {/if}
 
