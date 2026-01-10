@@ -46,11 +46,6 @@
 <div class="flex min-h-screen items-center justify-center bg-background px-4">
   <Card class="w-full max-w-md">
     <CardHeader class="space-y-1 text-center">
-      <div class="mb-4 flex justify-center">
-        <div class="rounded-full bg-primary/10 p-3">
-          <Clock class="h-8 w-8 text-primary" />
-        </div>
-      </div>
       <CardTitle class="text-2xl font-bold">Inside</CardTitle>
       <CardDescription>Time Tracking System</CardDescription>
     </CardHeader>
@@ -100,9 +95,7 @@
         </Button>
       </form>
 
-      <p class="mt-4 text-center text-sm text-muted-foreground">
-        Use your corporate LDAP credentials
-      </p>
+      <p class="mt-4 text-center text-sm text-muted-foreground">Use your LDAP credentials</p>
     </CardContent>
   </Card>
 </div>

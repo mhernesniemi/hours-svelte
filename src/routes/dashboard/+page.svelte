@@ -375,11 +375,19 @@
   <!-- Selected Day Content -->
   <Card>
     <CardHeader class="pb-2">
-      <div class="flex items-center justify-between">
-        <CardTitle class="text-lg">
-          {format(selectedDate, "EEEE, MMMM d")}
-        </CardTitle>
-        {#await entriesPromise then dayData}
+      {#await entriesPromise then dayData}
+        <div class="flex items-center justify-between">
+          <CardTitle class="text-lg">
+            {format(selectedDate, "EEEE, MMMM d")}
+
+            {#if dayData.hasUnconfirmed}
+              <span
+                class="ml-2 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground"
+              >
+                Draft
+              </span>
+            {/if}
+          </CardTitle>
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
               <Clock class="h-4 w-4 text-muted-foreground" />
@@ -409,14 +417,13 @@
               </Button>
             {/if}
           </div>
-        {/await}
-      </div>
+        </div>
+      {/await}
     </CardHeader>
     <CardContent>
       {#await entriesPromise}
-        <div class="flex items-center justify-center py-8">
-          <div class="text-muted-foreground">Loading entries...</div>
-        </div>
+        <!-- Loading state, reduce layout shift -->
+        <div class="flex h-48 items-center justify-center"></div>
       {:then dayData}
         <!-- Entries List -->
         {#if dayData.entries.length > 0}
@@ -437,13 +444,6 @@
                     <div class="mt-0.5 font-mono text-xs text-muted-foreground">
                       {formatDuration(entry.startTime, entry.endTime)}
                     </div>
-                  {/if}
-                  {#if entry.status === "draft"}
-                    <span
-                      class="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
-                    >
-                      Draft
-                    </span>
                   {/if}
                 </div>
 
