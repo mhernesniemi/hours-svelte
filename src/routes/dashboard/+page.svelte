@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     getDayEntries,
+    getWeekStatus,
     createEntry,
     confirmDayEntries,
     deleteEntry,
@@ -80,9 +81,23 @@
     entriesPromise = getDayEntries({ date: selectedDate });
   });
 
+  // Load week status (which days are confirmed)
+  let weekStatusPromise = $state(untrack(() => getWeekStatus({ weekStart: currentWeekStart })));
+
+  // Re-fetch week status when week changes
+  $effect(() => {
+    weekStatusPromise = getWeekStatus({ weekStart: currentWeekStart });
+  });
+
+  // Helper to check if a day is confirmed
+  function isDayConfirmed(day: Date, confirmedDays: string[]): boolean {
+    return confirmedDays.includes(format(day, "yyyy-MM-dd"));
+  }
+
   // Helper to refresh entries after mutations
   function refreshEntries() {
     entriesPromise.refresh();
+    weekStatusPromise.refresh();
   }
 
   // Load phases and worktypes for the form
@@ -355,24 +370,28 @@
         if (val) selectDay(new Date(val));
       }}
     >
-      <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
-        {#each weekDays as day}
-          {@const dayIsFuture = isFuture(startOfDay(day))}
-          <Tabs.Trigger
-            value={format(day, "yyyy-MM-dd")}
-            disabled={dayIsFuture}
-            class={cn(
-              "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
-              "data-[state=inactive]:hover:bg-accent",
-              isToday(day) && !isSameDay(day, selectedDate) && "bg-accent text-accent-foreground"
-            )}
-          >
-            <span class="text-xs font-medium">{formatWeekday(day)}</span>
-            <span class="text-lg font-bold">{formatDayNumber(day)}</span>
-          </Tabs.Trigger>
-        {/each}
-      </Tabs.List>
+      {#await weekStatusPromise then weekStatus}
+        <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
+          {#each weekDays as day}
+            {@const dayIsFuture = isFuture(startOfDay(day))}
+            {@const isConfirmed = isDayConfirmed(day, weekStatus.confirmedDays)}
+            <Tabs.Trigger
+              value={format(day, "yyyy-MM-dd")}
+              disabled={dayIsFuture}
+              class={cn(
+                "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
+                "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
+                "data-[state=inactive]:hover:bg-accent",
+                isToday(day) && !isSameDay(day, selectedDate) && "bg-accent text-accent-foreground",
+                isConfirmed && "bg-green-100 data-[state=active]:bg-green-600 dark:bg-green-900/30"
+              )}
+            >
+              <span class="text-xs font-medium">{formatWeekday(day)}</span>
+              <span class="text-lg font-bold">{formatDayNumber(day)}</span>
+            </Tabs.Trigger>
+          {/each}
+        </Tabs.List>
+      {/await}
     </Tabs.Root>
   </div>
 

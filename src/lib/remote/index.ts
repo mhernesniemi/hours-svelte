@@ -4,6 +4,7 @@ export { loginWithLdap, logout, getCurrentUser, isAuthenticated } from "./auth.r
 
 export {
 	getMonthEntries,
+	getWeekStatus,
 	getDayEntries,
 	createEntry,
 	updateEntry,

@@ -70,6 +70,57 @@ export const getMonthEntries = query(
 );
 
 /**
+ * Get confirmed status for days in a week (for UI indicators)
+ */
+export const getWeekStatus = query(
+	v.object({
+		weekStart: DateSchema
+	}),
+	async ({ weekStart }) => {
+		const event = getRequestEvent();
+		const user = await validateSession(event.cookies);
+		requireAuth(user);
+
+		// Get entries for the week (7 days from weekStart)
+		const weekEnd = new Date(weekStart);
+		weekEnd.setDate(weekEnd.getDate() + 6);
+
+		// Fetch month data (handles most cases, weeks rarely span 3 months)
+		const month = weekStart.getMonth() + 1;
+		const year = weekStart.getFullYear();
+		const entries = await getHourEntriesForMonth(user.id, year, month);
+
+		// If week spans two months, fetch the other month too
+		const endMonth = weekEnd.getMonth() + 1;
+		const endYear = weekEnd.getFullYear();
+		if (month !== endMonth || year !== endYear) {
+			const moreEntries = await getHourEntriesForMonth(user.id, endYear, endMonth);
+			entries.push(...moreEntries);
+		}
+
+		// Group by date and check confirmed status
+		const confirmedDays: string[] = [];
+		const byDate = new Map<string, typeof entries>();
+
+		for (const entry of entries) {
+			const dateKey = entry.startTime.toISOString().split("T")[0];
+			if (!byDate.has(dateKey)) {
+				byDate.set(dateKey, []);
+			}
+			byDate.get(dateKey)!.push(entry);
+		}
+
+		for (const [date, dayEntries] of byDate) {
+			if (dayEntries.length > 0 && dayEntries.every((e) => e.status !== "draft")) {
+				confirmedDays.push(date);
+			}
+		}
+
+		return { confirmedDays };
+	}
+);
+
+/**
  * Get hour entries for a specific day
  */
 export const getDayEntries = query(
