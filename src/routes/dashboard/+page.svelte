@@ -3,12 +3,13 @@
     getDayEntries,
     getWeekStatus,
     createEntry,
+    updateEntry,
     confirmDayEntries,
     deleteEntry,
     getPhasesWithHierarchy,
     getWorktypes
   } from "$lib/remote";
-  import { goto, replaceState } from "$app/navigation";
+  import { replaceState } from "$app/navigation";
   import { page } from "$app/state";
   import { browser } from "$app/environment";
   import { parseISO, isValid } from "date-fns";
@@ -135,13 +136,14 @@
   let deletingEntry = $state<number | null>(null);
   let error = $state("");
 
-  // New entry form state
+  // Form state (shared between new entry and edit)
   let showNewEntryForm = $state(false);
-  let newStartTime = $state("");
-  let newEndTime = $state("");
-  let newDescription = $state("");
-  let newPhaseId = $state<number | null>(null);
-  let newWorktypeId = $state<number | null>(null);
+  let editingEntryId = $state<number | null>(null);
+  let formStartTime = $state("");
+  let formEndTime = $state("");
+  let formDescription = $state("");
+  let formPhaseId = $state<number | null>(null);
+  let formWorktypeId = $state<number | null>(null);
   let phaseSearch = $state("");
   let phaseDropdownOpen = $state(false);
   let worktypeDropdownOpen = $state(false);
@@ -174,7 +176,7 @@
     withViewTransition(() => {
       selectedDate = day;
       // Reset form when changing days
-      resetNewEntryForm();
+      resetForm();
     });
   }
 
@@ -189,22 +191,48 @@
     localStorage.setItem(DEFAULT_WORKTYPE_KEY, String(id));
   }
 
-  function resetNewEntryForm() {
+  function resetForm() {
     showNewEntryForm = false;
-    newStartTime = "";
-    newEndTime = "";
-    newDescription = "";
-    newPhaseId = null;
-    newWorktypeId = null;
+    editingEntryId = null;
+    formStartTime = "";
+    formEndTime = "";
+    formDescription = "";
+    formPhaseId = null;
+    formWorktypeId = null;
     phaseSearch = "";
     phaseDropdownOpen = false;
     worktypeDropdownOpen = false;
     error = "";
   }
 
+  function startEditing(entry: {
+    id: number;
+    startTime: Date | string;
+    endTime: Date | string | null;
+    description: string | null;
+    phaseId: number | null;
+    worktypeId: number | null;
+  }) {
+    // Close new entry form if open
+    showNewEntryForm = false;
+    editingEntryId = entry.id;
+    formStartTime = formatTime(entry.startTime);
+    formEndTime = entry.endTime ? formatTime(entry.endTime) : "";
+    formDescription = entry.description || "";
+    formPhaseId = entry.phaseId;
+    formWorktypeId = entry.worktypeId;
+    phaseSearch = "";
+    error = "";
+  }
+
+  function cancelEditing() {
+    editingEntryId = null;
+    error = "";
+  }
+
   async function handleAddEntry() {
     showNewEntryForm = true;
-    newWorktypeId = getDefaultWorktypeId();
+    formWorktypeId = getDefaultWorktypeId();
     await tick();
     phaseDropdownOpen = true;
   }
@@ -216,11 +244,11 @@
   }
 
   function selectPhase(phase: { id: number; fullName: string }) {
-    newPhaseId = phase.id;
+    formPhaseId = phase.id;
     phaseDropdownOpen = false;
     tick().then(() => {
       // Open work type dropdown if not filled, otherwise focus on start time
-      if (!newWorktypeId) {
+      if (!formWorktypeId) {
         worktypeDropdownOpen = true;
       } else {
         startTimeInputRef?.focus();
@@ -285,28 +313,28 @@
 
     try {
       const dateObj = startOfDay(selectedDate);
-      const [startHour, startMin] = newStartTime.split(":").map(Number);
+      const [startHour, startMin] = formStartTime.split(":").map(Number);
       const startDateTime = set(dateObj, { hours: startHour, minutes: startMin });
 
       let endDateTime: Date | null = null;
-      if (newEndTime) {
-        const [endHour, endMin] = newEndTime.split(":").map(Number);
+      if (formEndTime) {
+        const [endHour, endMin] = formEndTime.split(":").map(Number);
         endDateTime = set(dateObj, { hours: endHour, minutes: endMin });
       }
 
       const result = await createEntry({
         startTime: startDateTime,
         endTime: endDateTime,
-        description: newDescription || null,
+        description: formDescription || null,
         issueCode: null,
-        phaseId: newPhaseId,
-        worktypeId: newWorktypeId
+        phaseId: formPhaseId,
+        worktypeId: formWorktypeId
       });
 
       if (result.success) {
         // Save the selected worktype as default for next time
-        saveDefaultWorktypeId(newWorktypeId);
-        resetNewEntryForm();
+        saveDefaultWorktypeId(formWorktypeId);
+        resetForm();
         refreshEntries();
       } else {
         error = result.error || "Failed to create entry";
@@ -318,12 +346,62 @@
     }
   }
 
+  async function handleUpdateEntry(e: Event) {
+    e.preventDefault();
+    error = "";
+    isSubmitting = true;
+
+    if (!editingEntryId) return;
+
+    try {
+      const dateObj = startOfDay(selectedDate);
+      const [startHour, startMin] = formStartTime.split(":").map(Number);
+      const startDateTime = set(dateObj, { hours: startHour, minutes: startMin });
+
+      let endDateTime: Date | null = null;
+      if (formEndTime) {
+        const [endHour, endMin] = formEndTime.split(":").map(Number);
+        endDateTime = set(dateObj, { hours: endHour, minutes: endMin });
+      }
+
+      const result = await updateEntry({
+        entryId: editingEntryId,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        description: formDescription || null,
+        phaseId: formPhaseId,
+        worktypeId: formWorktypeId
+      });
+
+      if (result.success) {
+        resetForm();
+        refreshEntries();
+      } else {
+        error = result.error || "Failed to update entry";
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : "Failed to update entry";
+    } finally {
+      isSubmitting = false;
+    }
+  }
+
   function handleKeyDown(e: KeyboardEvent) {
     // Cmd+S (Mac) or Ctrl+S (Windows/Linux) to save
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
       e.preventDefault(); // Prevent browser's "Save Page" dialog
       if (showNewEntryForm && !isSubmitting) {
         handleCreateEntry(e);
+      } else if (editingEntryId && !isSubmitting) {
+        handleUpdateEntry(e);
+      }
+    }
+    // Escape to cancel editing
+    if (e.key === "Escape") {
+      if (editingEntryId) {
+        cancelEditing();
+      } else if (showNewEntryForm) {
+        resetForm();
       }
     }
   }
@@ -494,57 +572,207 @@
         {#if dayData.entries.length > 0}
           <div class="mb-4 divide-y divide-border">
             {#each dayData.entries as entry}
-              <div class="flex items-start justify-between gap-12 py-3 first:pt-0">
-                <!-- Time Column -->
-                <div class="w-28 shrink-0">
-                  <div class="font-mono text-sm font-medium">
-                    {formatTime(entry.startTime)}
+              {#if editingEntryId === entry.id}
+                <!-- Inline Edit Form -->
+                <div class="py-3 first:pt-0">
+                  {#await Promise.all([phasesPromise, worktypesPromise]) then [phases, worktypes]}
+                    <form onsubmit={handleUpdateEntry} class="space-y-4">
+                      <div class="mb-2 flex items-center justify-between">
+                        <h3 class="font-medium">Edit Entry</h3>
+                        <Button type="button" variant="ghost" size="icon" onclick={cancelEditing}>
+                          <X class="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <!-- Phase Selection -->
+                      <div class="space-y-1">
+                        <Label for="edit-phase-combobox">Project</Label>
+                        <Popover.Root bind:open={phaseDropdownOpen}>
+                          <Popover.Trigger bind:ref={phaseTriggerRef}>
+                            {#snippet child({ props })}
+                              <Button
+                                {...props}
+                                id="edit-phase-combobox"
+                                variant="outline"
+                                class="w-full justify-between"
+                                role="combobox"
+                                aria-expanded={phaseDropdownOpen}
+                              >
+                                <span class="truncate">
+                                  {formPhaseId
+                                    ? getSelectedPhaseName(phases, formPhaseId)
+                                    : "Select project..."}
+                                </span>
+                                <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            {/snippet}
+                          </Popover.Trigger>
+                          <Popover.Content class="w-(--bits-popover-anchor-width) p-0">
+                            <Command.Root shouldFilter={false}>
+                              <Command.Input placeholder="Search" bind:value={phaseSearch} />
+                              <Command.List>
+                                <Command.Empty>No phases found.</Command.Empty>
+                                <Command.Group>
+                                  {#each getFilteredPhases(phases, phaseSearch) as phase (phase.id)}
+                                    <Command.Item
+                                      value={phase.fullName}
+                                      onSelect={() => selectPhase(phase)}
+                                    >
+                                      <Check
+                                        class={cn(
+                                          "mr-2 h-4 w-4",
+                                          formPhaseId !== phase.id && "text-transparent"
+                                        )}
+                                      />
+                                      {phase.fullName}
+                                    </Command.Item>
+                                  {/each}
+                                </Command.Group>
+                              </Command.List>
+                            </Command.Root>
+                          </Popover.Content>
+                        </Popover.Root>
+                      </div>
+
+                      <!-- Worktype + Times -->
+                      <div class="grid grid-cols-4 gap-4">
+                        <div class="col-span-2 space-y-1">
+                          <Label for="edit-worktype">Work Type</Label>
+                          <Select.Root
+                            type="single"
+                            bind:open={worktypeDropdownOpen}
+                            value={formWorktypeId ? String(formWorktypeId) : undefined}
+                            onValueChange={(val) => {
+                              formWorktypeId = val ? Number(val) : null;
+                              if (val) {
+                                tick().then(() => startTimeInputRef?.focus());
+                              }
+                            }}
+                          >
+                            <Select.Trigger id="edit-worktype" class="w-full">
+                              <span data-slot="select-value">
+                                {#if formWorktypeId}
+                                  {worktypes.find((wt) => wt.id === formWorktypeId)?.name ||
+                                    "Select work type..."}
+                                {:else}
+                                  Select work type...
+                                {/if}
+                              </span>
+                            </Select.Trigger>
+                            <Select.Content>
+                              {#each worktypes as wt}
+                                <Select.Item value={String(wt.id)} label={wt.name} />
+                              {/each}
+                            </Select.Content>
+                          </Select.Root>
+                        </div>
+
+                        <div class="space-y-1">
+                          <Label for="edit-startTime">Start</Label>
+                          <TimeInput
+                            id="edit-startTime"
+                            bind:value={formStartTime}
+                            required
+                            bind:ref={startTimeInputRef}
+                            oncomplete={() => endTimeInputRef?.focus()}
+                          />
+                        </div>
+
+                        <div class="space-y-1">
+                          <Label for="edit-endTime">End</Label>
+                          <TimeInput
+                            id="edit-endTime"
+                            bind:value={formEndTime}
+                            bind:ref={endTimeInputRef}
+                            oncomplete={() => descriptionRef?.focus()}
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Description -->
+                      <div class="space-y-1">
+                        <Label for="edit-description">Description</Label>
+                        <Textarea
+                          id="edit-description"
+                          bind:value={formDescription}
+                          bind:ref={descriptionRef}
+                          rows={2}
+                          placeholder="What did you work on?"
+                        />
+                      </div>
+
+                      <!-- Actions -->
+                      <div class="flex justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onclick={cancelEditing}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" size="sm" disabled={isSubmitting}>
+                          {#if isSubmitting}
+                            <Loader2 class="h-4 w-4 animate-spin" />
+                            Saving...
+                          {:else}
+                            <Save class="h-4 w-4" />
+                            Save
+                          {/if}
+                        </Button>
+                      </div>
+                    </form>
+                  {/await}
+                </div>
+              {:else}
+                <!-- Normal Entry Display -->
+                <div class="flex items-start justify-between gap-12 py-3 first:pt-0">
+                  <!-- Time Column -->
+                  <div class="w-28 shrink-0">
+                    <div class="font-mono text-sm font-medium">
+                      {formatTime(entry.startTime)}
+                      {#if entry.endTime}
+                        <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
+                      {:else}
+                        <span class="text-muted-foreground"> ongoing</span>
+                      {/if}
+                    </div>
                     {#if entry.endTime}
-                      <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
-                    {:else}
-                      <span class="text-muted-foreground"> ongoing</span>
+                      <div class="mt-0.5 font-mono text-xs text-muted-foreground">
+                        {formatDuration(entry.startTime, entry.endTime)}
+                      </div>
                     {/if}
                   </div>
-                  {#if entry.endTime}
-                    <div class="mt-0.5 font-mono text-xs text-muted-foreground">
-                      {formatDuration(entry.startTime, entry.endTime)}
+
+                  <!-- Content Column -->
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-primary">
+                      {entry.description || "No description"}
+                    </p>
+                    {#if entry.phase}
+                      <p class="mt-2 text-xs text-muted-foreground">
+                        {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase
+                          .name}
+                      </p>
+                    {/if}
+                  </div>
+
+                  <!-- Actions -->
+                  {#if entry.status === "draft"}
+                    <div class="flex shrink-0 gap-1">
+                      <Button variant="ghost" size="icon" onclick={() => startEditing(entry)}>
+                        <Edit class="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onclick={() => handleDeleteEntry(entry.id)}
+                        disabled={deletingEntry === entry.id}
+                      >
+                        <Trash2 class="h-4 w-4" />
+                      </Button>
                     </div>
                   {/if}
                 </div>
-
-                <!-- Content Column -->
-                <div class="min-w-0 flex-1">
-                  <p class="text-sm font-medium text-primary">
-                    {entry.description || "No description"}
-                  </p>
-                  {#if entry.phase}
-                    <p class="mt-2 text-xs text-muted-foreground">
-                      {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase
-                        .name}
-                    </p>
-                  {/if}
-                </div>
-
-                <!-- Actions -->
-                {#if entry.status === "draft"}
-                  <div class="flex shrink-0 gap-1">
-                    <Button variant="ghost" size="icon" onclick={() => goto(`/entry/${entry.id}`)}>
-                      <Edit class="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onclick={() => handleDeleteEntry(entry.id)}
-                      disabled={deletingEntry === entry.id}
-                    >
-                      <Trash2 class="h-4 w-4" />
-                    </Button>
-                  </div>
-                {/if}
-              </div>
+              {/if}
             {/each}
           </div>
-        {:else if !showNewEntryForm}
+        {:else if !showNewEntryForm && !editingEntryId}
           <div class="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Clock class="mb-2 h-8 w-8" />
             <p class="text-sm">No entries for this day</p>
@@ -563,7 +791,7 @@
             <form onsubmit={handleCreateEntry} class="space-y-4">
               <div class="mb-2 flex items-center justify-between">
                 <h3 class="font-medium">New Entry</h3>
-                <Button type="button" variant="ghost" size="icon" onclick={resetNewEntryForm}>
+                <Button type="button" variant="ghost" size="icon" onclick={resetForm}>
                   <X class="h-4 w-4" />
                 </Button>
               </div>
@@ -589,8 +817,8 @@
                           aria-expanded={phaseDropdownOpen}
                         >
                           <span class="truncate">
-                            {newPhaseId
-                              ? getSelectedPhaseName(phases, newPhaseId)
+                            {formPhaseId
+                              ? getSelectedPhaseName(phases, formPhaseId)
                               : "Select project..."}
                           </span>
                           <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -611,7 +839,7 @@
                                 <Check
                                   class={cn(
                                     "mr-2 h-4 w-4",
-                                    newPhaseId !== phase.id && "text-transparent"
+                                    formPhaseId !== phase.id && "text-transparent"
                                   )}
                                 />
                                 {phase.fullName}
@@ -640,9 +868,9 @@
                     <Select.Root
                       type="single"
                       bind:open={worktypeDropdownOpen}
-                      value={newWorktypeId ? String(newWorktypeId) : undefined}
+                      value={formWorktypeId ? String(formWorktypeId) : undefined}
                       onValueChange={(val) => {
-                        newWorktypeId = val ? Number(val) : null;
+                        formWorktypeId = val ? Number(val) : null;
                         if (val) {
                           tick().then(() => startTimeInputRef?.focus());
                         }
@@ -650,8 +878,8 @@
                     >
                       <Select.Trigger id="worktype" class="w-full">
                         <span data-slot="select-value">
-                          {#if newWorktypeId}
-                            {worktypes.find((wt) => wt.id === newWorktypeId)?.name ||
+                          {#if formWorktypeId}
+                            {worktypes.find((wt) => wt.id === formWorktypeId)?.name ||
                               "Select work type..."}
                           {:else}
                             Select work type...
@@ -672,7 +900,7 @@
                   <Label for="startTime">Start</Label>
                   <TimeInput
                     id="startTime"
-                    bind:value={newStartTime}
+                    bind:value={formStartTime}
                     required
                     bind:ref={startTimeInputRef}
                     oncomplete={() => endTimeInputRef?.focus()}
@@ -684,7 +912,7 @@
                   <Label for="endTime">End</Label>
                   <TimeInput
                     id="endTime"
-                    bind:value={newEndTime}
+                    bind:value={formEndTime}
                     bind:ref={endTimeInputRef}
                     oncomplete={() => descriptionRef?.focus()}
                   />
@@ -696,7 +924,7 @@
                 <Label for="description">Description</Label>
                 <Textarea
                   id="description"
-                  bind:value={newDescription}
+                  bind:value={formDescription}
                   bind:ref={descriptionRef}
                   rows={2}
                   placeholder="What did you work on?"
@@ -705,7 +933,7 @@
 
               <!-- Submit -->
               <div class="flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onclick={resetNewEntryForm}>
+                <Button type="button" variant="outline" size="sm" onclick={resetForm}>
                   Cancel
                 </Button>
                 <Button type="submit" size="sm" disabled={isSubmitting}>
