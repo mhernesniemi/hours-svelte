@@ -71,6 +71,7 @@ export interface VismaListResponse<T> {
 
 /**
  * Visma Severa REST API client
+ * @see https://api.severa.visma.com/rest-api/doc/index.html
  */
 class VismaClient {
 	private apiKey: string | null = null;
@@ -110,9 +111,6 @@ class VismaClient {
 			"users:read",
 			"customers:read",
 			"projects:read",
-			"projects:write",
-			"activities:read",
-			"activities:write",
 			"hours:read",
 			"hours:write",
 			"hours:delete",
