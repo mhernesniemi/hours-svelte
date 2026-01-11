@@ -2,6 +2,7 @@
   import { format } from "date-fns";
   import { Button } from "$lib/components/ui/button";
   import { CardHeader, CardTitle } from "$lib/components/ui/card";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Check, Clock, Loader2 } from "@lucide/svelte";
 
   interface Props {
@@ -21,6 +22,13 @@
     confirmingDay,
     onconfirmday
   }: Props = $props();
+
+  let confirmDialogOpen = $state(false);
+
+  function handleConfirm() {
+    confirmDialogOpen = false;
+    onconfirmday();
+  }
 </script>
 
 <CardHeader class="pb-2">
@@ -51,7 +59,12 @@
       </div>
 
       {#if hasUnconfirmed}
-        <Button size="sm" variant="outline" onclick={onconfirmday} disabled={confirmingDay}>
+        <Button
+          size="sm"
+          variant="outline"
+          onclick={() => (confirmDialogOpen = true)}
+          disabled={confirmingDay}
+        >
           {#if confirmingDay}
             <Loader2 class="h-4 w-4 animate-spin" />
             Confirming...
@@ -64,3 +77,19 @@
     </div>
   </div>
 </CardHeader>
+
+<Dialog.Root bind:open={confirmDialogOpen}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Confirm day</Dialog.Title>
+      <Dialog.Description>
+        Are you sure you want to confirm this day: {format(selectedDate, "EEEE dd.MM")}? You can't
+        add more entries to this date after it has been confirmed.
+      </Dialog.Description>
+    </Dialog.Header>
+    <Dialog.Footer>
+      <Button variant="outline" onclick={() => (confirmDialogOpen = false)}>Cancel</Button>
+      <Button onclick={handleConfirm}>OK</Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
