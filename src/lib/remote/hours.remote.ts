@@ -8,6 +8,7 @@ import {
 	getHourEntriesForMonth,
 	getHourEntriesForDay,
 	confirmDay,
+	copyPreviousConfirmedDay,
 	calculateTotalMinutes,
 	formatDuration,
 	HourEntryError
@@ -243,6 +244,30 @@ export const confirmDayEntries = command(
 		try {
 			const entries = await confirmDay(user.id, date);
 			return { success: true, entries };
+		} catch (error) {
+			if (error instanceof HourEntryError) {
+				return { success: false, error: error.message, code: error.code };
+			}
+			throw error;
+		}
+	}
+);
+
+/**
+ * Copy entries from the most recent confirmed day to the target date
+ */
+export const copyPreviousDay = command(
+	v.object({
+		targetDate: DateSchema
+	}),
+	async ({ targetDate }) => {
+		const event = getRequestEvent();
+		const user = await validateSession(event.cookies);
+		requireAuth(user);
+
+		try {
+			const entries = await copyPreviousConfirmedDay(user.id, targetDate);
+			return { success: true, entries, count: entries.length };
 		} catch (error) {
 			if (error instanceof HourEntryError) {
 				return { success: false, error: error.message, code: error.code };

@@ -573,3 +573,97 @@ export function formatDuration(minutes: number): string {
 	if (mins === 0) return `${hours}h`;
 	return `${hours}h ${mins}m`;
 }
+
+/**
+ * Find the most recent confirmed day before the target date
+ * and copy all its entries as drafts to the target date
+ */
+export async function copyPreviousConfirmedDay(
+	userId: number,
+	targetDate: Date
+): Promise<HourEntry[]> {
+	// Validate target date
+	validateNotFutureDate(targetDate);
+
+	// Check if target day already has entries
+	const existingEntries = await getHourEntriesForDay(userId, targetDate);
+	if (existingEntries.length > 0) {
+		throw new HourEntryError(
+			"Target day already has entries",
+			ErrorCodes.DAY_LOCKED
+		);
+	}
+
+	// Search backwards for the most recent confirmed day (up to 90 days)
+	const targetStart = startOfDay(toZonedTime(targetDate, TIMEZONE));
+	let searchDate = new Date(targetStart);
+	searchDate.setDate(searchDate.getDate() - 1);
+
+	let sourceEntries: HourEntryWithRelations[] = [];
+	const maxDaysBack = 90;
+
+	for (let i = 0; i < maxDaysBack; i++) {
+		const dayEntries = await getHourEntriesForDay(userId, searchDate);
+
+		// Check if this day has confirmed entries (all non-draft)
+		if (dayEntries.length > 0 && dayEntries.every((e) => e.status !== "draft")) {
+			sourceEntries = dayEntries;
+			break;
+		}
+
+		searchDate.setDate(searchDate.getDate() - 1);
+	}
+
+	if (sourceEntries.length === 0) {
+		throw new HourEntryError(
+			"No confirmed day found in the last 90 days",
+			ErrorCodes.NO_ENTRIES_FOR_DAY
+		);
+	}
+
+	// Copy entries to target date
+	const targetDateStart = startOfDay(toZonedTime(targetDate, TIMEZONE));
+	const createdEntries: HourEntry[] = [];
+
+	for (const sourceEntry of sourceEntries) {
+		// Calculate the time offset from the source date
+		const sourceStart = toZonedTime(sourceEntry.startTime, TIMEZONE);
+		const startHours = sourceStart.getHours();
+		const startMinutes = sourceStart.getMinutes();
+
+		// Create new start time on target date
+		const newStartTime = new Date(targetDateStart);
+		newStartTime.setHours(startHours, startMinutes, 0, 0);
+		const newStartTimeUtc = fromZonedTime(newStartTime, TIMEZONE);
+
+		let newEndTimeUtc: Date | null = null;
+		if (sourceEntry.endTime) {
+			const sourceEnd = toZonedTime(sourceEntry.endTime, TIMEZONE);
+			const endHours = sourceEnd.getHours();
+			const endMinutes = sourceEnd.getMinutes();
+
+			const newEndTime = new Date(targetDateStart);
+			newEndTime.setHours(endHours, endMinutes, 0, 0);
+			newEndTimeUtc = fromZonedTime(newEndTime, TIMEZONE);
+		}
+
+		const [newEntry] = await db
+			.insert(hourEntries)
+			.values({
+				userId,
+				startTime: newStartTimeUtc,
+				endTime: newEndTimeUtc,
+				description: sourceEntry.description,
+				issueCode: sourceEntry.issueCode,
+				phaseId: sourceEntry.phaseId,
+				worktypeId: sourceEntry.worktypeId,
+				status: "draft",
+				source: "inside"
+			})
+			.returning();
+
+		createdEntries.push(newEntry);
+	}
+
+	return createdEntries;
+}

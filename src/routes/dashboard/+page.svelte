@@ -6,6 +6,7 @@
     updateEntry,
     confirmDayEntries,
     deleteEntry,
+    copyPreviousDay,
     getPhasesWithHierarchy,
     getWorktypes
   } from "$lib/remote";
@@ -53,6 +54,7 @@
   let confirmingDay = $state(false);
   let deletingEntryId = $state<number | null>(null);
   let isSubmitting = $state(false);
+  let isCopyingPrevious = $state(false);
 
   // Sync URL with date changes
   $effect(() => {
@@ -211,6 +213,24 @@
       confirmingDay = false;
     }
   }
+
+  async function handleCopyPreviousDay() {
+    clearError();
+    isCopyingPrevious = true;
+
+    try {
+      const result = await copyPreviousDay({ targetDate: selectedDate });
+      if (!result.success) {
+        setError(result.error || "Failed to copy previous day");
+      } else {
+        refreshEntries();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to copy previous day");
+    } finally {
+      isCopyingPrevious = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -295,10 +315,12 @@
                   <Clock class="mb-2 h-8 w-8" />
                   <p class="text-sm">No entries for this day</p>
                   <button
-                    class="mt-6 flex items-center gap-2 rounded-md border border-dashed border-primary/30 px-2 py-1 text-xs text-muted-foreground hover:text-primary"
+                    class="mt-6 flex items-center gap-2 rounded-md border border-dashed border-primary/30 px-2 py-1 text-xs text-muted-foreground hover:text-primary disabled:opacity-50"
+                    onclick={handleCopyPreviousDay}
+                    disabled={isCopyingPrevious}
                   >
                     <Copy class="h-3 w-3" />
-                    Copy Previous Day
+                    {isCopyingPrevious ? "Copying..." : "Copy Previous Day"}
                   </button>
                 </div>
               {/if}

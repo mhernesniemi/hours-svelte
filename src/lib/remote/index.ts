@@ -9,7 +9,8 @@ export {
 	createEntry,
 	updateEntry,
 	deleteEntry,
-	confirmDayEntries
+	confirmDayEntries,
+	copyPreviousDay
 } from "./hours.remote";
 
 export {
