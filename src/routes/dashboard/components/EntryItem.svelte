@@ -63,10 +63,16 @@
   <!-- Actions -->
   {#if entry.status === "draft"}
     <div class="flex shrink-0 gap-1">
-      <Button variant="ghost" size="icon" onclick={onedit}>
+      <Button variant="ghost" size="icon" onclick={onedit} class="opacity-80 hover:opacity-100">
         <Edit class="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" onclick={ondelete} disabled={isDeleting}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onclick={ondelete}
+        disabled={isDeleting}
+        class="opacity-80 hover:opacity-100 "
+      >
         <Trash2 class="h-4 w-4" />
       </Button>
     </div>
