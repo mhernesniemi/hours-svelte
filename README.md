@@ -50,3 +50,11 @@ LDAP test user credentials:
 
 - Username: `testuser`
 - Password: `testpassword`
+
+## Drizzle Studio for database management
+
+Open Drizzle Studio:
+
+```sh
+pnpm db:studio
+```
