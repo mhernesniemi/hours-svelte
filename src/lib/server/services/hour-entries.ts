@@ -43,10 +43,14 @@ export const ErrorCodes = {
 
 export class HourEntryError extends Error {
 	code: number;
+	entryId?: number;
+	field?: string;
 
-	constructor(message: string, code: number) {
+	constructor(message: string, code: number, entryId?: number, field?: string) {
 		super(message);
 		this.code = code;
+		this.entryId = entryId;
+		this.field = field;
 		this.name = "HourEntryError";
 	}
 }
@@ -509,28 +513,36 @@ export async function confirmDay(userId: number, date: Date): Promise<HourEntry[
 
 	// Validate all entries have required fields
 	for (const entry of draftEntries) {
-		if (!entry.description || entry.description.trim() === "") {
-			throw new HourEntryError(
-				"All entries must have a description",
-				ErrorCodes.MISSING_REQUIRED_FIELD
-			);
-		}
 		if (!entry.phaseId) {
 			throw new HourEntryError(
-				"All entries must have a phase selected",
-				ErrorCodes.INVALID_PHASE
+				"Entry must have a project selected",
+				ErrorCodes.INVALID_PHASE,
+				entry.id,
+				"phase"
 			);
 		}
 		if (!entry.worktypeId) {
 			throw new HourEntryError(
-				"All entries must have a worktype selected",
-				ErrorCodes.INVALID_WORKTYPE
+				"Entry must have a work type selected",
+				ErrorCodes.INVALID_WORKTYPE,
+				entry.id,
+				"worktype"
 			);
 		}
 		if (!entry.endTime) {
 			throw new HourEntryError(
-				"All entries must have an end time",
-				ErrorCodes.MISSING_END_TIME
+				"Entry must have an end time",
+				ErrorCodes.MISSING_END_TIME,
+				entry.id,
+				"endTime"
+			);
+		}
+		if (!entry.description || entry.description.trim() === "") {
+			throw new HourEntryError(
+				"Entry must have a description",
+				ErrorCodes.MISSING_REQUIRED_FIELD,
+				entry.id,
+				"description"
 			);
 		}
 	}

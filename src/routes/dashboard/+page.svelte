@@ -32,6 +32,7 @@
     getShowNewEntryForm,
     getCopyFromEntry,
     getError,
+    getEntryError,
     selectDay,
     navigateWeek,
     startEditing,
@@ -52,6 +53,7 @@
   let showNewEntryForm = $derived(getShowNewEntryForm());
   let copyFromEntry = $derived(getCopyFromEntry());
   let error = $derived(getError());
+  let entryError = $derived(getEntryError());
 
   // UI state (local to page)
   let confirmingDay = $state(false);
@@ -206,7 +208,7 @@
     try {
       const result = await confirmDayEntries({ date: selectedDate });
       if (!result.success) {
-        setError(result.error || "Failed to confirm day");
+        setError(result.error || "Failed to confirm day", result.entryId, result.field);
       } else {
         refreshEntries();
       }
@@ -306,6 +308,7 @@
                 <EntryItem
                   {entry}
                   isDeleting={deletingEntryId === entry.id}
+                  errorField={entryError?.entryId === entry.id ? entryError.field : null}
                   oncopy={() =>
                     startCopying({
                       endTime: entry.endTime,

@@ -11,12 +11,19 @@ type CopyEntryData = {
 	worktypeId: number | null;
 } | null;
 
+// Type for entry validation error
+type EntryError = {
+	entryId: number;
+	field: string;
+} | null;
+
 // Create store state - needs to be initialized after page load
 let _selectedDate = $state<Date>(new Date());
 let _currentWeekStart = $state<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
 let _editingEntryId = $state<number | null>(null);
 let _showNewEntryForm = $state(false);
 let _copyFromEntry = $state<CopyEntryData>(null);
+let _entryError = $state<EntryError>(null);
 let _error = $state("");
 
 // Getters for reactive access
@@ -42,6 +49,10 @@ export function getCopyFromEntry() {
 
 export function getError() {
 	return _error;
+}
+
+export function getEntryError() {
+	return _entryError;
 }
 
 // Initialize from URL params
@@ -104,10 +115,14 @@ export function resetForm() {
 	_error = "";
 }
 
-export function setError(message: string) {
+export function setError(message: string, entryId?: number, field?: string) {
 	_error = message;
+	if (entryId && field) {
+		_entryError = { entryId, field };
+	}
 }
 
 export function clearError() {
 	_error = "";
+	_entryError = null;
 }

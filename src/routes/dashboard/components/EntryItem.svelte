@@ -3,6 +3,7 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { Copy, Edit, Trash2 } from "@lucide/svelte";
   import { formatTime, formatDuration } from "$lib/dashboard";
+  import { cn } from "$lib/utils";
 
   type Entry = {
     id: number;
@@ -24,12 +25,13 @@
   interface Props {
     entry: Entry;
     isDeleting?: boolean;
+    errorField?: string | null;
     oncopy: () => void;
     onedit: () => void;
     ondelete: () => void;
   }
 
-  let { entry, isDeleting = false, oncopy, onedit, ondelete }: Props = $props();
+  let { entry, isDeleting = false, errorField = null, oncopy, onedit, ondelete }: Props = $props();
 </script>
 
 <div
@@ -38,13 +40,18 @@
   <!-- Top Row on Mobile: Time + Actions -->
   <div class="flex items-center justify-between gap-2 sm:contents">
     <!-- Time Column -->
-    <div class="shrink-0 sm:w-28">
+    <div
+      class={cn(
+        "shrink-0 rounded px-1 -mx-1 sm:w-28",
+        errorField === "endTime" && "bg-destructive/10"
+      )}
+    >
       <div class="font-mono text-sm font-medium">
         {formatTime(entry.startTime)}
         {#if entry.endTime}
           <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
         {:else}
-          <span class="text-muted-foreground"> ongoing</span>
+          <span class={cn("text-muted-foreground", errorField === "endTime" && "text-destructive")}> ongoing</span>
         {/if}
       </div>
       {#if entry.endTime}
@@ -114,11 +121,21 @@
 
   <!-- Content Column -->
   <div class="min-w-0 flex-1">
-    <p class="text-sm font-medium text-primary">
+    <p
+      class={cn(
+        "text-sm font-medium text-primary rounded px-1 -mx-1",
+        errorField === "description" && "bg-destructive/10 text-destructive"
+      )}
+    >
       {entry.description || "No description"}
     </p>
     {#if entry.phase}
-      <p class="mt-1 text-xs text-muted-foreground sm:mt-2">
+      <p
+        class={cn(
+          "mt-1 text-xs text-muted-foreground sm:mt-2 rounded px-1 -mx-1",
+          (errorField === "phase" || errorField === "worktype") && "bg-destructive/10 text-destructive"
+        )}
+      >
         {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}
       </p>
     {/if}

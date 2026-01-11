@@ -246,7 +246,13 @@ export const confirmDayEntries = command(
 			return { success: true, entries };
 		} catch (error) {
 			if (error instanceof HourEntryError) {
-				return { success: false, error: error.message, code: error.code };
+				return {
+					success: false,
+					error: error.message,
+					code: error.code,
+					entryId: error.entryId,
+					field: error.field
+				};
 			}
 			throw error;
 		}
