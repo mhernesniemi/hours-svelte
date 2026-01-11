@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs";
+  import * as Select from "$lib/components/ui/select";
   import { cn } from "$lib/utils";
   import { ChevronLeft, ChevronRight } from "@lucide/svelte";
   import {
@@ -62,36 +63,75 @@
     </div>
   </div>
 
-  <!-- Weekday Tabs -->
-  <Tabs.Root
-    value={format(selectedDate, "yyyy-MM-dd")}
-    onValueChange={(val) => {
-      if (val) onselectday(new Date(val));
-    }}
-  >
-    <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
-      {#each weekDays as day}
-        {@const dayIsFuture = isFuture(startOfDay(day))}
-        {@const isConfirmed = isDayConfirmed(day)}
-        <Tabs.Trigger
-          value={format(day, "yyyy-MM-dd")}
-          disabled={dayIsFuture}
-          class={cn(
-            "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
-            "data-[state=inactive]:hover:bg-secondary/40",
-            isToday(day) &&
-              !isSameDay(day, selectedDate) &&
-              "border border-dashed border-primary/30"
-          )}
-        >
-          <span class={cn("text-xs font-medium", isConfirmed && "text-green-500")}
-            >{formatWeekday(day)}</span
+  <!-- Mobile: Select dropdown -->
+  <div class="block sm:hidden">
+    <Select.Root
+      type="single"
+      value={format(selectedDate, "yyyy-MM-dd")}
+      onValueChange={(val) => {
+        if (val) onselectday(new Date(val));
+      }}
+    >
+      <Select.Trigger class="w-full">
+        {@const isConfirmed = isDayConfirmed(selectedDate)}
+        <span class={cn("flex items-center gap-2", isConfirmed && "text-green-500")}>
+          <span class="font-medium">{formatWeekday(selectedDate)}</span>
+          <span class="font-bold">{formatDayNumber(selectedDate)}</span>
+          {#if isToday(selectedDate)}
+            <span class="text-xs text-muted-foreground">(Today)</span>
+          {/if}
+        </span>
+      </Select.Trigger>
+      <Select.Content>
+        {#each weekDays as day}
+          {@const dayIsFuture = isFuture(startOfDay(day))}
+          {@const isConfirmed = isDayConfirmed(day)}
+          <Select.Item value={format(day, "yyyy-MM-dd")} disabled={dayIsFuture}>
+            <span class={cn("flex items-center gap-2", isConfirmed && "text-green-500")}>
+              <span class="font-medium">{formatWeekday(day)}</span>
+              <span class="font-bold">{formatDayNumber(day)}</span>
+              {#if isToday(day)}
+                <span class="text-xs text-muted-foreground">(Today)</span>
+              {/if}
+            </span>
+          </Select.Item>
+        {/each}
+      </Select.Content>
+    </Select.Root>
+  </div>
+
+  <!-- Desktop: Weekday Tabs -->
+  <div class="hidden sm:block">
+    <Tabs.Root
+      value={format(selectedDate, "yyyy-MM-dd")}
+      onValueChange={(val) => {
+        if (val) onselectday(new Date(val));
+      }}
+    >
+      <Tabs.List class="grid h-auto w-full grid-cols-7 gap-1 bg-transparent p-0">
+        {#each weekDays as day}
+          {@const dayIsFuture = isFuture(startOfDay(day))}
+          {@const isConfirmed = isDayConfirmed(day)}
+          <Tabs.Trigger
+            value={format(day, "yyyy-MM-dd")}
+            disabled={dayIsFuture}
+            class={cn(
+              "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
+              "data-[state=inactive]:hover:bg-secondary/40",
+              isToday(day) &&
+                !isSameDay(day, selectedDate) &&
+                "border border-dashed border-primary/30"
+            )}
           >
-          <span class={cn("text-lg font-bold", isConfirmed && "text-green-500")}
-            >{formatDayNumber(day)}</span
-          >
-        </Tabs.Trigger>
-      {/each}
-    </Tabs.List>
-  </Tabs.Root>
+            <span class={cn("text-xs font-medium", isConfirmed && "text-green-500")}
+              >{formatWeekday(day)}</span
+            >
+            <span class={cn("text-lg font-bold", isConfirmed && "text-green-500")}
+              >{formatDayNumber(day)}</span
+            >
+          </Tabs.Trigger>
+        {/each}
+      </Tabs.List>
+    </Tabs.Root>
+  </div>
 </div>
