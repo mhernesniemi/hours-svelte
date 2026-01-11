@@ -8,3 +8,14 @@ givenName: Test
 mail: test@example.org
 userPassword: {SSHA}O39mrQxR6S4r8OenaL+qhQ/uL5jV4aMD
 uid: testuser
+
+dn: cn=Extra User,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+cn: Extra User
+sn: Extra
+givenName: User
+mail: extra@example.org
+userPassword: {SSHA}O39mrQxR6S4r8OenaL+qhQ/uL5jV4aMD
+uid: extrauser
