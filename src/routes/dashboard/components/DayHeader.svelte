@@ -25,7 +25,7 @@
 
 <CardHeader class="pb-2">
   <div class="flex items-center justify-between">
-    <CardTitle class="flex items-center gap-3 text-lg">
+    <CardTitle class="flex min-h-[35px] items-center gap-3 text-lg">
       {format(selectedDate, "EEEE, MMMM d")}
 
       {#if hasUnconfirmed}
