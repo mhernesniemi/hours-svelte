@@ -30,11 +30,13 @@
     getCurrentWeekStart,
     getEditingEntryId,
     getShowNewEntryForm,
+    getCopyFromEntry,
     getError,
     selectDay,
     navigateWeek,
     startEditing,
     startCreating,
+    startCopying,
     resetForm,
     setError,
     clearError
@@ -48,6 +50,7 @@
   let currentWeekStart = $derived(getCurrentWeekStart());
   let editingEntryId = $derived(getEditingEntryId());
   let showNewEntryForm = $derived(getShowNewEntryForm());
+  let copyFromEntry = $derived(getCopyFromEntry());
   let error = $derived(getError());
 
   // UI state (local to page)
@@ -303,6 +306,13 @@
                 <EntryItem
                   {entry}
                   isDeleting={deletingEntryId === entry.id}
+                  oncopy={() =>
+                    startCopying({
+                      endTime: entry.endTime,
+                      description: entry.description,
+                      phaseId: entry.phaseId,
+                      worktypeId: entry.worktypeId
+                    })}
                   onedit={() => startEditing(entry.id)}
                   ondelete={() => handleDeleteEntry(entry.id)}
                 />
@@ -332,6 +342,7 @@
             <div class="mt-4 border-t border-border pt-4">
               <EntryForm
                 mode="create"
+                {copyFromEntry}
                 {phasesPromise}
                 {worktypesPromise}
                 defaultWorktypeId={getDefaultWorktypeId()}

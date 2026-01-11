@@ -3,11 +3,20 @@ import { browser } from "$app/environment";
 import { replaceState } from "$app/navigation";
 import { getInitialDate } from "./date";
 
+// Type for entry data when copying
+type CopyEntryData = {
+	endTime: Date | string | null;
+	description: string | null;
+	phaseId: number | null;
+	worktypeId: number | null;
+} | null;
+
 // Create store state - needs to be initialized after page load
 let _selectedDate = $state<Date>(new Date());
 let _currentWeekStart = $state<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
 let _editingEntryId = $state<number | null>(null);
 let _showNewEntryForm = $state(false);
+let _copyFromEntry = $state<CopyEntryData>(null);
 let _error = $state("");
 
 // Getters for reactive access
@@ -25,6 +34,10 @@ export function getEditingEntryId() {
 
 export function getShowNewEntryForm() {
 	return _showNewEntryForm;
+}
+
+export function getCopyFromEntry() {
+	return _copyFromEntry;
 }
 
 export function getError() {
@@ -75,11 +88,19 @@ export function startEditing(id: number) {
 export function startCreating() {
 	_showNewEntryForm = true;
 	_editingEntryId = null;
+	_copyFromEntry = null;
+}
+
+export function startCopying(entry: NonNullable<CopyEntryData>) {
+	_showNewEntryForm = true;
+	_editingEntryId = null;
+	_copyFromEntry = entry;
 }
 
 export function resetForm() {
 	_editingEntryId = null;
 	_showNewEntryForm = false;
+	_copyFromEntry = null;
 	_error = "";
 }
 

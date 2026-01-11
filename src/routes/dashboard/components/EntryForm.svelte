@@ -30,9 +30,17 @@
     worktypeId: number | null;
   };
 
+  type CopyFromEntry = {
+    endTime: Date | string | null;
+    description: string | null;
+    phaseId: number | null;
+    worktypeId: number | null;
+  };
+
   interface Props {
     mode: "create" | "edit";
     entry?: Entry | null;
+    copyFromEntry?: CopyFromEntry | null;
     phasesPromise: Promise<Phase[]>;
     worktypesPromise: Promise<Worktype[]>;
     defaultWorktypeId?: number | null;
@@ -50,6 +58,7 @@
   let {
     mode,
     entry = null,
+    copyFromEntry = null,
     phasesPromise,
     worktypesPromise,
     defaultWorktypeId = null,
@@ -79,11 +88,19 @@
   // Sync form state with entry prop (handles both initial load and changes)
   $effect(() => {
     if (entry) {
+      // Edit mode - populate from existing entry
       startTime = formatTime(entry.startTime);
       endTime = entry.endTime ? formatTime(entry.endTime) : "";
       description = entry.description || "";
       phaseId = entry.phaseId;
       worktypeId = entry.worktypeId;
+    } else if (copyFromEntry) {
+      // Copy mode - start time = copied entry's end time
+      startTime = copyFromEntry.endTime ? formatTime(copyFromEntry.endTime) : "";
+      endTime = "";
+      description = copyFromEntry.description || "";
+      phaseId = copyFromEntry.phaseId;
+      worktypeId = copyFromEntry.worktypeId;
     } else {
       // Create mode - reset form and apply default worktype
       startTime = "";
@@ -94,9 +111,17 @@
     }
   });
 
-  // Open phase dropdown on mount for create mode
+  // Focus handling - runs when refs become available
   $effect(() => {
-    if (mode === "create" && !entry) {
+    if (mode === "create" && copyFromEntry && startTimeInputRef) {
+      // Copy mode - focus on start time when ref is available
+      tick().then(() => startTimeInputRef.focus());
+    }
+  });
+
+  // Open phase dropdown on mount for new entry (not copy)
+  $effect(() => {
+    if (mode === "create" && !entry && !copyFromEntry) {
       tick().then(() => {
         phaseDropdownOpen = true;
       });

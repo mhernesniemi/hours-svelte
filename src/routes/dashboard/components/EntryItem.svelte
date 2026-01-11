@@ -23,11 +23,12 @@
   interface Props {
     entry: Entry;
     isDeleting?: boolean;
+    oncopy: () => void;
     onedit: () => void;
     ondelete: () => void;
   }
 
-  let { entry, isDeleting = false, onedit, ondelete }: Props = $props();
+  let { entry, isDeleting = false, oncopy, onedit, ondelete }: Props = $props();
 </script>
 
 <div class="flex items-start justify-between gap-12 py-3 first:pt-0">
@@ -63,7 +64,7 @@
   <!-- Actions -->
   {#if entry.status === "draft"}
     <div class="flex shrink-0 gap-1">
-      <Button variant="ghost" size="icon" class="opacity-80 hover:opacity-100">
+      <Button variant="ghost" size="icon" onclick={oncopy} class="opacity-80 hover:opacity-100">
         <Copy class="h-4 w-4" />
       </Button>
       <Button variant="ghost" size="icon" onclick={onedit} class="opacity-80 hover:opacity-100">
