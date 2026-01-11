@@ -373,7 +373,7 @@
 
           <!-- New Entry Form -->
           {#if showNewEntryForm}
-            <div class="mt-4 border-t border-border pt-4">
+            <div class="border-t border-border pt-4">
               <EntryForm
                 mode="create"
                 {copyFromEntry}
@@ -388,7 +388,7 @@
             </div>
           {:else if !dayData.allConfirmed && !editingEntryId}
             <!-- Add Entry Button -->
-            <div class="mt-4 border-t border-border pt-4">
+            <div class="border-t border-border pt-4">
               <Button variant="outline" class="w-full" onclick={startCreating}>
                 <Plus class="h-4 w-4" />
                 Add Entry

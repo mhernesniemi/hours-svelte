@@ -11,7 +11,7 @@
 </script>
 
 {#if entries.length > 0}
-  <div class="mb-4 divide-y divide-border">
+  <div class="divide-y divide-border">
     {#each entries as entry (entry.id)}
       {@render children(entry)}
     {/each}
