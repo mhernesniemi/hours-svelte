@@ -31,20 +31,46 @@
   let { entry, isDeleting = false, oncopy, onedit, ondelete }: Props = $props();
 </script>
 
-<div class="flex items-start justify-between gap-12 py-3 first:pt-0">
-  <!-- Time Column -->
-  <div class="w-28 shrink-0">
-    <div class="font-mono text-sm font-medium">
-      {formatTime(entry.startTime)}
+<div
+  class="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+>
+  <!-- Top Row on Mobile: Time + Actions -->
+  <div class="flex items-center justify-between gap-2 sm:contents">
+    <!-- Time Column -->
+    <div class="shrink-0 sm:w-28">
+      <div class="font-mono text-sm font-medium">
+        {formatTime(entry.startTime)}
+        {#if entry.endTime}
+          <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
+        {:else}
+          <span class="text-muted-foreground"> ongoing</span>
+        {/if}
+      </div>
       {#if entry.endTime}
-        <span class="text-muted-foreground"> – </span>{formatTime(entry.endTime)}
-      {:else}
-        <span class="text-muted-foreground"> ongoing</span>
+        <div class="mt-0.5 font-mono text-xs text-muted-foreground">
+          {formatDuration(entry.startTime, entry.endTime)}
+        </div>
       {/if}
     </div>
-    {#if entry.endTime}
-      <div class="mt-0.5 font-mono text-xs text-muted-foreground">
-        {formatDuration(entry.startTime, entry.endTime)}
+
+    <!-- Actions - Mobile: inline with time, Desktop: at the end -->
+    {#if entry.status === "draft"}
+      <div class="flex shrink-0 gap-1 sm:order-last">
+        <Button variant="ghost" size="icon" onclick={oncopy} class="opacity-80 hover:opacity-100">
+          <Copy class="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onclick={onedit} class="opacity-80 hover:opacity-100">
+          <Edit class="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onclick={ondelete}
+          disabled={isDeleting}
+          class="opacity-80 hover:opacity-100"
+        >
+          <Trash2 class="h-4 w-4" />
+        </Button>
       </div>
     {/if}
   </div>
@@ -55,30 +81,9 @@
       {entry.description || "No description"}
     </p>
     {#if entry.phase}
-      <p class="mt-2 text-xs text-muted-foreground">
+      <p class="mt-1 text-xs text-muted-foreground sm:mt-2">
         {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}
       </p>
     {/if}
   </div>
-
-  <!-- Actions -->
-  {#if entry.status === "draft"}
-    <div class="flex shrink-0 gap-1">
-      <Button variant="ghost" size="icon" onclick={oncopy} class="opacity-80 hover:opacity-100">
-        <Copy class="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="icon" onclick={onedit} class="opacity-80 hover:opacity-100">
-        <Edit class="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onclick={ondelete}
-        disabled={isDeleting}
-        class="opacity-80 hover:opacity-100 "
-      >
-        <Trash2 class="h-4 w-4" />
-      </Button>
-    </div>
-  {/if}
 </div>
