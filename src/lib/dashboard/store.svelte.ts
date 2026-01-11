@@ -81,11 +81,18 @@ export function selectDay(day: Date) {
 }
 
 export function navigateWeek(direction: "prev" | "next") {
-	const weekDays = Array.from({ length: 7 }, (_, i) => addDays(_currentWeekStart, i));
 	_currentWeekStart =
 		direction === "prev" ? subWeeks(_currentWeekStart, 1) : addWeeks(_currentWeekStart, 1);
-	const dayOffset = weekDays.findIndex((d) => isSameDay(d, _selectedDate));
-	_selectedDate = addDays(_currentWeekStart, dayOffset >= 0 ? dayOffset : 0);
+
+	// If navigating to current week, select today; otherwise select Monday
+	const today = new Date();
+	const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+	if (isSameDay(_currentWeekStart, currentWeekStart)) {
+		_selectedDate = today;
+	} else {
+		_selectedDate = _currentWeekStart; // Monday
+	}
+
 	_editingEntryId = null;
 	_showNewEntryForm = false;
 }
