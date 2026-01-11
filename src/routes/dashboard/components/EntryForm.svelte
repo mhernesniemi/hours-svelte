@@ -41,6 +41,7 @@
     mode: "create" | "edit";
     entry?: Entry | null;
     copyFromEntry?: CopyFromEntry | null;
+    lastEntryEndTime?: Date | string | null;
     phasesPromise: Promise<Phase[]>;
     worktypesPromise: Promise<Worktype[]>;
     defaultWorktypeId?: number | null;
@@ -59,6 +60,7 @@
     mode,
     entry = null,
     copyFromEntry = null,
+    lastEntryEndTime = null,
     phasesPromise,
     worktypesPromise,
     defaultWorktypeId = null,
@@ -103,7 +105,7 @@
       worktypeId = copyFromEntry.worktypeId;
     } else {
       // Create mode - reset form and apply default worktype
-      startTime = "";
+      startTime = lastEntryEndTime ? formatTime(lastEntryEndTime) : "";
       endTime = "";
       description = "";
       phaseId = null;

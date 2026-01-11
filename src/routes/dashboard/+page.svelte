@@ -343,6 +343,7 @@
               <EntryForm
                 mode="create"
                 {copyFromEntry}
+                lastEntryEndTime={dayData.entries.at(-1)?.endTime}
                 {phasesPromise}
                 {worktypesPromise}
                 defaultWorktypeId={getDefaultWorktypeId()}
