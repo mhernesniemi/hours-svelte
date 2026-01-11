@@ -5,6 +5,7 @@
   import { goto, onNavigate } from "$app/navigation";
   import { page } from "$app/state";
   import { Button } from "$lib/components/ui/button";
+  import * as Tooltip from "$lib/components/ui/tooltip";
   import { Clock, Settings, LogOut, User } from "@lucide/svelte";
 
   let { children } = $props();
@@ -41,61 +42,63 @@
   <title>Inside - Time Tracking</title>
 </svelte:head>
 
-{#await userPromise}
-  <div class="flex min-h-screen items-center justify-center">
-    <div class="text-muted-foreground">Loading...</div>
-  </div>
-{:then user}
-  {#if user && page.url.pathname !== "/login"}
-    <div class="flex min-h-screen flex-col">
-      <!-- Navigation Header -->
-      <header class="sticky top-0 z-50 border-b border-border bg-card">
-        <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <div class="flex items-center gap-6">
-            <a href="/" class="text-xl font-bold text-[#ff3c1b]">Inside</a>
-            {#if user.role === "admin"}
-              <nav class="flex items-center gap-1">
-                <a
-                  href="/dashboard"
-                  class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                  class:bg-accent={isActive("/dashboard")}
-                >
-                  <Clock class="h-4 w-4" />
-                  Hours
-                </a>
+<Tooltip.Provider>
+  {#await userPromise}
+    <div class="flex min-h-screen items-center justify-center">
+      <div class="text-muted-foreground">Loading...</div>
+    </div>
+  {:then user}
+    {#if user && page.url.pathname !== "/login"}
+      <div class="flex min-h-screen flex-col">
+        <!-- Navigation Header -->
+        <header class="sticky top-0 z-50 border-b border-border bg-card">
+          <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+            <div class="flex items-center gap-6">
+              <a href="/" class="text-xl font-bold text-[#ff3c1b]">Inside</a>
+              {#if user.role === "admin"}
+                <nav class="flex items-center gap-1">
+                  <a
+                    href="/dashboard"
+                    class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                    class:bg-accent={isActive("/dashboard")}
+                  >
+                    <Clock class="h-4 w-4" />
+                    Hours
+                  </a>
 
-                <a
-                  href="/admin"
-                  class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
-                  class:bg-accent={isActive("/admin")}
-                >
-                  <Settings class="h-4 w-4" />
-                  Admin
-                </a>
-              </nav>
-            {/if}
-          </div>
-
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 text-sm text-muted-foreground">
-              <User class="h-4 w-4" />
-              <span>{user.firstName} {user.lastName}</span>
+                  <a
+                    href="/admin"
+                    class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                    class:bg-accent={isActive("/admin")}
+                  >
+                    <Settings class="h-4 w-4" />
+                    Admin
+                  </a>
+                </nav>
+              {/if}
             </div>
 
-            <Button variant="ghost" size="sm" onclick={handleLogout}>
-              <LogOut class="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <User class="h-4 w-4" />
+                <span>{user.firstName} {user.lastName}</span>
+              </div>
 
-      <!-- Main Content -->
-      <main class="flex-1">
-        {@render children()}
-      </main>
-    </div>
-  {:else}
-    {@render children()}
-  {/if}
-{/await}
+              <Button variant="ghost" size="sm" onclick={handleLogout}>
+                <LogOut class="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1">
+          {@render children()}
+        </main>
+      </div>
+    {:else}
+      {@render children()}
+    {/if}
+  {/await}
+</Tooltip.Provider>
