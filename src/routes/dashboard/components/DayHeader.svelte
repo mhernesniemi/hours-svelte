@@ -53,10 +53,10 @@
       {#if hasUnconfirmed}
         <Button size="sm" variant="outline" onclick={onconfirmday} disabled={confirmingDay}>
           {#if confirmingDay}
-            <Loader2 class="mr-1 h-4 w-4 animate-spin" />
+            <Loader2 class="h-4 w-4 animate-spin" />
             Confirming...
           {:else}
-            <Check class="mr-1 h-4 w-4" />
+            <Check class="h-4 w-4" />
             Confirm Day
           {/if}
         </Button>
