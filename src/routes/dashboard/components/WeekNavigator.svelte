@@ -78,8 +78,7 @@
           disabled={dayIsFuture}
           class={cn(
             "flex h-auto flex-col items-center rounded-lg p-2 transition-colors",
-            "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none",
-            "data-[state=inactive]:hover:bg-accent",
+            "data-[state=inactive]:hover:bg-secondary/40",
             isToday(day) &&
               !isSameDay(day, selectedDate) &&
               "border border-dashed border-primary/30"
