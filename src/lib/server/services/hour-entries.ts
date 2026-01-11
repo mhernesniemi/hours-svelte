@@ -588,10 +588,7 @@ export async function copyPreviousConfirmedDay(
 	// Check if target day already has entries
 	const existingEntries = await getHourEntriesForDay(userId, targetDate);
 	if (existingEntries.length > 0) {
-		throw new HourEntryError(
-			"Target day already has entries",
-			ErrorCodes.DAY_LOCKED
-		);
+		throw new HourEntryError("Target day already has entries", ErrorCodes.DAY_LOCKED);
 	}
 
 	// Search backwards for the most recent confirmed day (up to 90 days)

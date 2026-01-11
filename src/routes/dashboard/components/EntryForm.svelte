@@ -254,7 +254,9 @@
                 <Command.Group heading={group.customerName}>
                   {#each group.phases as phase (phase.id)}
                     <Command.Item value={phase.fullName} onSelect={() => selectPhase(phase)}>
-                      <Check class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")} />
+                      <Check
+                        class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")}
+                      />
                       {phase.caseName} / {phase.name}
                     </Command.Item>
                   {/each}
@@ -267,8 +269,8 @@
     </div>
 
     <!-- Worktype + Times -->
-    <div class="grid grid-cols-4 gap-4">
-      <div class="col-span-2 space-y-1">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <div class="space-y-1 sm:col-span-2">
         <Label for="worktype">Work Type</Label>
         <Select.Root
           type="single"
