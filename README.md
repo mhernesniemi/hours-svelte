@@ -1,38 +1,52 @@
-# sv
+# in5ide
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## Prerequisites
 
-## Creating a project
+- Node.js 20+
+- pnpm
+- Docker and Docker Compose
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Development Setup
 
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### 1. Install dependencies
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm install
 ```
 
-## Building
+### 2. Start services
 
-To create a production version of your app:
+Start PostgreSQL and LDAP containers:
 
 ```sh
-npm run build
+docker compose up -d
 ```
 
-You can preview the production build with `npm run preview`.
+### 3. Configure environment
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Create and modify `.env` file based on `.env.example`:
+
+```sh
+cp .env.example .env
+```
+
+### 4. Setup database
+
+Push the schema to the database:
+
+```sh
+pnpm db:push
+```
+
+### 5. Start development server
+
+```sh
+pnpm dev
+```
+
+## Test Users
+
+LDAP test user credentials:
+
+- Username: `testuser`
+- Password: `testpassword`
