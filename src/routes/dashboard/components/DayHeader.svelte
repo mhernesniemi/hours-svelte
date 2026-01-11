@@ -11,6 +11,7 @@
     hasUnconfirmed: boolean;
     allConfirmed: boolean;
     confirmingDay: boolean;
+    confirmDialogOpen?: boolean;
     onconfirmday: () => void;
   }
 
@@ -20,10 +21,9 @@
     hasUnconfirmed,
     allConfirmed,
     confirmingDay,
+    confirmDialogOpen = $bindable(false),
     onconfirmday
   }: Props = $props();
-
-  let confirmDialogOpen = $state(false);
 
   function handleConfirm() {
     confirmDialogOpen = false;

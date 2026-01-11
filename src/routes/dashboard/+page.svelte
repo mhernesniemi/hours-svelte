@@ -61,6 +61,21 @@
   let isSubmitting = $state(false);
   let isCopyingPrevious = $state(false);
 
+  // Track day data for keyboard shortcuts
+  let currentDayData = $state<{ hasUnconfirmed: boolean } | null>(null);
+  let confirmDialogOpen = $state(false);
+
+  // Update currentDayData when entries load
+  $effect(() => {
+    entriesPromise
+      .then((data) => {
+        currentDayData = data;
+      })
+      .catch(() => {
+        currentDayData = null;
+      });
+  });
+
   // Sync URL with date changes
   $effect(() => {
     syncUrlWithDate(page.url);
@@ -236,7 +251,22 @@
       isCopyingPrevious = false;
     }
   }
+
+  function handleGlobalKeyDown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      // Don't interfere if a form is open (form has its own Cmd+S handler)
+      if (showNewEntryForm || editingEntryId) return;
+
+      // Open confirm dialog if there are unconfirmed entries
+      if (currentDayData?.hasUnconfirmed && !confirmingDay) {
+        e.preventDefault();
+        confirmDialogOpen = true;
+      }
+    }
+  }
 </script>
+
+<svelte:document onkeydown={handleGlobalKeyDown} />
 
 <svelte:head>
   <title>Hours - Inside</title>
@@ -284,6 +314,7 @@
           hasUnconfirmed={dayData.hasUnconfirmed}
           allConfirmed={dayData.allConfirmed}
           {confirmingDay}
+          bind:confirmDialogOpen
           onconfirmday={handleConfirmDay}
         />
 
