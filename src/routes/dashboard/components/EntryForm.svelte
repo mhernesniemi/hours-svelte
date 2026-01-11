@@ -300,7 +300,7 @@
         bind:value={description}
         bind:ref={descriptionRef}
         rows={2}
-        placeholder="What did you work on?"
+        placeholder="ABC-123 Descripe your task"
       />
     </div>
 
