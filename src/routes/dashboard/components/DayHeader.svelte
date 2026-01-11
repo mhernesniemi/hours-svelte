@@ -32,49 +32,74 @@
 </script>
 
 <CardHeader class="pb-2">
-  <div class="flex items-center justify-between">
-    <CardTitle class="flex min-h-[35px] items-center gap-3 text-lg">
-      {format(selectedDate, "EEEE, MMMM d")}
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <!-- Top row on mobile: Date + Total time -->
+    <div class="flex items-center justify-between gap-2 sm:contents">
+      <CardTitle class="flex flex-wrap items-center gap-2 text-lg sm:min-h-[35px] sm:gap-3">
+        {format(selectedDate, "EEEE, MMMM d")}
 
-      {#if hasUnconfirmed}
-        <span
-          class="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground/70"
-        >
-          Draft
-        </span>
-      {/if}
-      {#if allConfirmed}
-        <span
-          class="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400"
-        >
-          <Check class="h-3 w-3" />
-          Confirmed
-        </span>
-      {/if}
-    </CardTitle>
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2">
-        <Clock class="h-4 w-4 text-muted-foreground" />
-        <span class="text-sm font-medium">{totalFormatted}</span>
+        {#if hasUnconfirmed}
+          <span
+            class="inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-normal text-secondary-foreground/70"
+          >
+            Draft
+          </span>
+        {/if}
+        {#if allConfirmed}
+          <span
+            class="flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400"
+          >
+            <Check class="h-3 w-3" />
+            Confirmed
+          </span>
+        {/if}
+      </CardTitle>
+
+      <!-- Total time - Mobile: inline with title, Desktop: grouped with button -->
+      <div class="flex items-center gap-2 sm:order-last sm:gap-3">
+        <div class="flex items-center gap-2">
+          <Clock class="h-4 w-4 text-muted-foreground" />
+          <span class="text-sm font-medium">{totalFormatted}</span>
+        </div>
+
+        {#if hasUnconfirmed}
+          <Button
+            size="sm"
+            variant="outline"
+            onclick={() => (confirmDialogOpen = true)}
+            disabled={confirmingDay}
+            class="hidden sm:inline-flex"
+          >
+            {#if confirmingDay}
+              <Loader2 class="h-4 w-4 animate-spin" />
+              Confirming...
+            {:else}
+              <Check class="h-4 w-4" />
+              Confirm Day
+            {/if}
+          </Button>
+        {/if}
       </div>
-
-      {#if hasUnconfirmed}
-        <Button
-          size="sm"
-          variant="outline"
-          onclick={() => (confirmDialogOpen = true)}
-          disabled={confirmingDay}
-        >
-          {#if confirmingDay}
-            <Loader2 class="h-4 w-4 animate-spin" />
-            Confirming...
-          {:else}
-            <Check class="h-4 w-4" />
-            Confirm Day
-          {/if}
-        </Button>
-      {/if}
     </div>
+
+    <!-- Mobile: Confirm button as full width -->
+    {#if hasUnconfirmed}
+      <Button
+        size="sm"
+        variant="outline"
+        onclick={() => (confirmDialogOpen = true)}
+        disabled={confirmingDay}
+        class="w-full sm:hidden"
+      >
+        {#if confirmingDay}
+          <Loader2 class="h-4 w-4 animate-spin" />
+          Confirming...
+        {:else}
+          <Check class="h-4 w-4" />
+          Confirm Day
+        {/if}
+      </Button>
+    {/if}
   </div>
 </CardHeader>
 
