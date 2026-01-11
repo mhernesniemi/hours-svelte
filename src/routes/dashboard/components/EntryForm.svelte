@@ -208,7 +208,7 @@
               {...props}
               id="phase-combobox"
               variant="outline"
-              class="w-full justify-between"
+              class="w-full justify-between font-normal"
               role="combobox"
               aria-expanded={phaseDropdownOpen}
             >
