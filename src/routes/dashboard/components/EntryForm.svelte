@@ -13,7 +13,15 @@
 
   type Phase = {
     id: number;
+    name: string;
     fullName: string;
+    caseName: string;
+    customerName: string;
+  };
+
+  type GroupedPhases = {
+    customerName: string;
+    phases: Phase[];
   };
 
   type Worktype = {
@@ -138,9 +146,25 @@
   });
 
   function getFilteredPhases(phases: Phase[], search: string): Phase[] {
-    if (!search) return phases.slice(0, 20);
+    if (!search) return phases.slice(0, 50);
     const lower = search.toLowerCase();
-    return phases.filter((p) => p.fullName.toLowerCase().includes(lower)).slice(0, 20);
+    return phases.filter((p) => p.fullName.toLowerCase().includes(lower)).slice(0, 50);
+  }
+
+  function groupPhasesByCustomer(phases: Phase[]): GroupedPhases[] {
+    const groups = new Map<string, Phase[]>();
+    for (const phase of phases) {
+      const existing = groups.get(phase.customerName);
+      if (existing) {
+        existing.push(phase);
+      } else {
+        groups.set(phase.customerName, [phase]);
+      }
+    }
+    return Array.from(groups.entries()).map(([customerName, phases]) => ({
+      customerName,
+      phases
+    }));
   }
 
   function getSelectedPhaseName(phases: Phase[]): string {
@@ -226,14 +250,16 @@
             <Command.Input placeholder="Search" bind:value={phaseSearch} />
             <Command.List>
               <Command.Empty>No phases found.</Command.Empty>
-              <Command.Group>
-                {#each getFilteredPhases(phases, phaseSearch) as phase (phase.id)}
-                  <Command.Item value={phase.fullName} onSelect={() => selectPhase(phase)}>
-                    <Check class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")} />
-                    {phase.fullName}
-                  </Command.Item>
-                {/each}
-              </Command.Group>
+              {#each groupPhasesByCustomer(getFilteredPhases(phases, phaseSearch)) as group (group.customerName)}
+                <Command.Group heading={group.customerName}>
+                  {#each group.phases as phase (phase.id)}
+                    <Command.Item value={phase.fullName} onSelect={() => selectPhase(phase)}>
+                      <Check class={cn("mr-2 h-4 w-4", phaseId !== phase.id && "text-transparent")} />
+                      {phase.caseName} / {phase.name}
+                    </Command.Item>
+                  {/each}
+                </Command.Group>
+              {/each}
             </Command.List>
           </Command.Root>
         </Popover.Content>
