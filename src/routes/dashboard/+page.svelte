@@ -355,7 +355,7 @@
                 oncancel={resetForm}
               />
             </div>
-          {:else if !dayData.allConfirmed}
+          {:else if !dayData.allConfirmed && !editingEntryId}
             <!-- Add Entry Button -->
             <div class="mt-4 border-t border-border pt-4">
               <Button variant="outline" class="w-full" onclick={startCreating}>
