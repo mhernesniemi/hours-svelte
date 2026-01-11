@@ -62,18 +62,47 @@
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    // Handle backspace to skip the colon
-    if (e.key === "Backspace") {
-      const target = e.target as HTMLInputElement;
-      const cursorPos = target.selectionStart ?? 0;
+    // Allow: backspace, delete, tab, escape, enter, arrows, home, end
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "Tab",
+      "Escape",
+      "Enter",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "Home",
+      "End"
+    ];
 
-      // If cursor is right after the colon (position 3) and nothing selected
-      if (cursorPos === 3 && target.selectionStart === target.selectionEnd) {
-        e.preventDefault();
-        // Remove the last digit of hours (position 1) and the colon
-        const digits = value.replace(/\D/g, "");
-        value = digits.slice(0, 1);
+    // Allow control/meta key combinations (copy, paste, select all, etc.)
+    if (e.ctrlKey || e.metaKey) {
+      return;
+    }
+
+    // Allow special keys
+    if (allowedKeys.includes(e.key)) {
+      // Handle backspace to skip the colon
+      if (e.key === "Backspace") {
+        const target = e.target as HTMLInputElement;
+        const cursorPos = target.selectionStart ?? 0;
+
+        // If cursor is right after the colon (position 3) and nothing selected
+        if (cursorPos === 3 && target.selectionStart === target.selectionEnd) {
+          e.preventDefault();
+          // Remove the last digit of hours (position 1) and the colon
+          const digits = value.replace(/\D/g, "");
+          value = digits.slice(0, 1);
+        }
       }
+      return;
+    }
+
+    // Block non-numeric keys
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
     }
   }
 
