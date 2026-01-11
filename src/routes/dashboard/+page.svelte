@@ -389,7 +389,7 @@
           {:else if !dayData.allConfirmed && !editingEntryId}
             <!-- Add Entry Button -->
             <div class="border-t border-border pt-4">
-              <Button variant="outline" class="w-full" onclick={startCreating}>
+              <Button variant="outline" class="w-full mt-2" onclick={startCreating}>
                 <Plus class="h-4 w-4" />
                 Add Entry
               </Button>
