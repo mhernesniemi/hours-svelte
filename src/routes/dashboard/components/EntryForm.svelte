@@ -361,7 +361,7 @@
     <!-- Actions -->
     <div class="flex items-start justify-between gap-2">
       <div class="text-xs text-muted-foreground flex gap-2">
-        <span class="mr-3 flex items-center gap-1"><kbd class="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">⌘ S</kbd> Save</span>
+        <span class="mr-3 flex items-center gap-1"><kbd class="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">cmd + S</kbd> Save</span>
         <span><kbd class="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">Esc</kbd> Cancel</span>
       </div>
       <div class="flex gap-2">
