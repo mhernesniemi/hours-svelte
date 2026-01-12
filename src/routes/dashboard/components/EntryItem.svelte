@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { Copy, Edit, Trash2 } from "@lucide/svelte";
+  import { Copy, Edit, Trash2, Dot } from "@lucide/svelte";
   import { formatTime, formatDuration } from "$lib/dashboard";
   import { cn } from "$lib/utils";
 
@@ -19,6 +19,10 @@
           name: string;
         };
       };
+    } | null;
+    worktype?: {
+      id: number;
+      name: string;
     } | null;
   };
 
@@ -130,14 +134,18 @@
       {entry.description || "No description"}
     </p>
     {#if entry.phase}
-      <p
+      <div
         class={cn(
-          "mt-1 text-xs text-muted-foreground sm:mt-2 rounded px-1 -mx-1",
+          "mt-1 flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground sm:mt-2 rounded px-1 -mx-1",
           (errorField === "phase" || errorField === "worktype") && "bg-destructive/10 text-destructive"
         )}
       >
-        {entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}
-      </p>
+        <span>{entry.phase.case.customer.name} / {entry.phase.case.name} / {entry.phase.name}</span>
+        {#if entry.worktype}
+          <Dot class="h-4 w-4 shrink-0 opacity-50" />
+          <span>{entry.worktype.name}</span>
+        {/if}
+      </div>
     {/if}
   </div>
 </div>
