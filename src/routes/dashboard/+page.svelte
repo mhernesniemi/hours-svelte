@@ -328,6 +328,7 @@
                   <EntryForm
                     mode="edit"
                     {entry}
+                    existingEntries={dayData.entries}
                     {phasesPromise}
                     {worktypesPromise}
                     {isSubmitting}
@@ -378,6 +379,7 @@
                 mode="create"
                 {copyFromEntry}
                 lastEntryEndTime={dayData.entries.at(-1)?.endTime}
+                existingEntries={dayData.entries}
                 {phasesPromise}
                 {worktypesPromise}
                 defaultWorktypeId={getDefaultWorktypeId()}

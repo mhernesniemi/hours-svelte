@@ -2,13 +2,14 @@
   import { tick } from "svelte";
   import { Button } from "$lib/components/ui/button";
   import * as Command from "$lib/components/ui/command";
+  import * as Dialog from "$lib/components/ui/dialog";
   import * as Popover from "$lib/components/ui/popover";
   import * as Select from "$lib/components/ui/select";
   import { TimeInput } from "$lib/components/ui/time-input";
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { cn } from "$lib/utils";
-  import { Check, X, ChevronsUpDown, Save, Loader2 } from "@lucide/svelte";
+  import { Check, X, ChevronsUpDown, Save, Loader2, AlertTriangle } from "@lucide/svelte";
   import { formatTime } from "$lib/dashboard";
 
   type Phase = {
@@ -50,6 +51,7 @@
     entry?: Entry | null;
     copyFromEntry?: CopyFromEntry | null;
     lastEntryEndTime?: Date | string | null;
+    existingEntries?: Entry[];
     phasesPromise: Promise<Phase[]>;
     worktypesPromise: Promise<Worktype[]>;
     defaultWorktypeId?: number | null;
@@ -69,6 +71,7 @@
     entry = null,
     copyFromEntry = null,
     lastEntryEndTime = null,
+    existingEntries = [],
     phasesPromise,
     worktypesPromise,
     defaultWorktypeId = null,
@@ -76,6 +79,25 @@
     onsubmit,
     oncancel
   }: Props = $props();
+
+  // Overlap warning state
+  let showOverlapWarning = $state(false);
+
+  // Simple overlap check using HH:mm string comparison
+  function hasOverlap(): boolean {
+    if (!startTime || !endTime) return false;
+
+    return existingEntries.some((e) => {
+      if (entry?.id === e.id) return false; // Skip self when editing
+      if (!e.endTime) return false;
+
+      const eStart = formatTime(e.startTime);
+      const eEnd = formatTime(e.endTime);
+
+      // Overlap: newStart < existingEnd AND existingStart < newEnd
+      return startTime < eEnd && eStart < endTime;
+    });
+  }
 
   // Form state - initialized empty, populated by $effect
   let startTime = $state("");
@@ -185,15 +207,17 @@
     });
   }
 
+  function submitForm() {
+    onsubmit({ startTime, endTime, description, phaseId, worktypeId });
+  }
+
   function handleSubmit(e: Event) {
     e.preventDefault();
-    onsubmit({
-      startTime,
-      endTime,
-      description,
-      phaseId,
-      worktypeId
-    });
+    if (hasOverlap()) {
+      showOverlapWarning = true;
+    } else {
+      submitForm();
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -348,4 +372,28 @@
       </Button>
     </div>
   </form>
+
+  <!-- Overlap Warning Dialog -->
+  <Dialog.Root bind:open={showOverlapWarning}>
+    <Dialog.Content showCloseButton={false}>
+      <Dialog.Header>
+        <Dialog.Title class="flex items-center gap-2">
+          <AlertTriangle class="h-5 w-5 text-amber-500" />
+          Overlapping Hours
+        </Dialog.Title>
+        <Dialog.Description>
+          This entry overlaps with an existing time entry. Save anyway?
+        </Dialog.Description>
+      </Dialog.Header>
+      <Dialog.Footer>
+        <Button variant="outline" onclick={() => (showOverlapWarning = false)}>Cancel</Button>
+        <Button
+          onclick={() => {
+            showOverlapWarning = false;
+            submitForm();
+          }}>Save Anyway</Button
+        >
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
 {/await}
