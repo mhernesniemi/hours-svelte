@@ -40,7 +40,7 @@
 </script>
 
 <svelte:head>
-  <title>Login - Inside</title>
+  <title>Inside</title>
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center bg-background px-4">
