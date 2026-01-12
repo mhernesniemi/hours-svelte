@@ -14,7 +14,7 @@
     isFuture,
     startOfDay
   } from "date-fns";
-  import { formatWeekday, formatDayNumber } from "$lib/dashboard";
+  import { formatWeekday, formatDayNumber, isFinnishHoliday } from "$lib/dashboard";
 
   interface Props {
     currentWeekStart: Date;
@@ -74,7 +74,14 @@
     >
       <Select.Trigger class="w-full">
         {@const isConfirmed = isDayConfirmed(selectedDate)}
-        <span class={cn("flex items-center gap-2", isConfirmed && "text-green-500")}>
+        {@const isHoliday = isFinnishHoliday(selectedDate)}
+        <span
+          class={cn(
+            "flex items-center gap-2",
+            isConfirmed && "text-green-500",
+            isHoliday && !isConfirmed && "text-yellow-500"
+          )}
+        >
           <span class="font-medium">{formatWeekday(selectedDate)}</span>
           <span class="font-bold">{formatDayNumber(selectedDate)}</span>
           {#if isToday(selectedDate)}
@@ -86,8 +93,15 @@
         {#each weekDays as day}
           {@const dayIsFuture = isFuture(startOfDay(day))}
           {@const isConfirmed = isDayConfirmed(day)}
+          {@const isHoliday = isFinnishHoliday(day)}
           <Select.Item value={format(day, "yyyy-MM-dd")} disabled={dayIsFuture}>
-            <span class={cn("flex items-center gap-2", isConfirmed && "text-green-500")}>
+            <span
+              class={cn(
+                "flex items-center gap-2",
+                isConfirmed && "text-green-500",
+                isHoliday && !isConfirmed && "text-yellow-500"
+              )}
+            >
               <span class="font-medium">{formatWeekday(day)}</span>
               <span class="font-bold">{formatDayNumber(day)}</span>
               {#if isToday(day)}
@@ -112,6 +126,7 @@
         {#each weekDays as day}
           {@const dayIsFuture = isFuture(startOfDay(day))}
           {@const isConfirmed = isDayConfirmed(day)}
+          {@const isHoliday = isFinnishHoliday(day)}
           <Tabs.Trigger
             value={format(day, "yyyy-MM-dd")}
             disabled={dayIsFuture}
@@ -123,11 +138,19 @@
                 "border border-dashed border-primary/30"
             )}
           >
-            <span class={cn("text-xs font-medium", isConfirmed && "text-green-500")}
-              >{formatWeekday(day)}</span
+            <span
+              class={cn(
+                "text-xs font-medium",
+                isConfirmed && "text-green-500",
+                isHoliday && !isConfirmed && "text-yellow-500"
+              )}>{formatWeekday(day)}</span
             >
-            <span class={cn("text-lg font-bold", isConfirmed && "text-green-500")}
-              >{formatDayNumber(day)}</span
+            <span
+              class={cn(
+                "text-lg font-bold",
+                isConfirmed && "text-green-500",
+                isHoliday && !isConfirmed && "text-yellow-500"
+              )}>{formatDayNumber(day)}</span
             >
           </Tabs.Trigger>
         {/each}
